@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --brand-green: #0a6e3a;
+    --brand-green-dark: #064d28;
+    --brand-green-light: #0f8c4a;
+    --brand-black: #1a1a1a;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply font-figtree text-nutado-gray-900 antialiased;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-lg bg-nutado-green px-6 py-3 text-sm font-semibold text-white transition-all duration-200 hover:bg-nutado-green-dark focus:outline-none focus:ring-2 focus:ring-nutado-green focus:ring-offset-2 active:scale-[0.98];
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-lg border border-nutado-gray-300 bg-white px-6 py-3 text-sm font-semibold text-nutado-gray-700 transition-all duration-200 hover:bg-nutado-gray-50 focus:outline-none focus:ring-2 focus:ring-nutado-green focus:ring-offset-2;
+  }
+
+  .input-field {
+    @apply w-full rounded-lg border border-nutado-gray-300 px-4 py-3 text-sm text-nutado-gray-900 placeholder-nutado-gray-400 transition-colors duration-200 focus:border-nutado-green focus:outline-none focus:ring-1 focus:ring-nutado-green;
+  }
+
+  .card {
+    @apply rounded-xl border border-nutado-gray-200 bg-white p-6 shadow-card transition-shadow duration-200 hover:shadow-card-hover;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}

@@ -1,0 +1,1086 @@
+{% comment %}
+  Kit Builder Section — Shopify Horizon Theme
+  ============================================
+  Upload to: sections/kit-builder.liquid
+  Setup: Customizer → add "Kit Builder" section → assign one collection per step.
+  Each collection's products become the selectable options for that step.
+  "Add Complete Kit" adds all selected products to cart via AJAX.
+  "Buy Single Tube" adds only the shade (Step 1) product.
+
+  Step 2 (Developer) is rendered as VOLUME PILLS — one pill per product in the
+  developer collection. The pill label is auto-extracted from the product title
+  (e.g. "10 Volume Developer" → "10 Vol"). If no number is found in the title,
+  the full title is shown as the pill label.
+{% endcomment %}
+
+<style>
+/* ── Layout ──────────────────────────────────────────────── */
+.kit-builder {
+  padding-block: 4rem;
+}
+
+.kit-builder__header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.kit-builder__label {
+  display: inline-block;
+  font-family: var(--font-heading-family, 'Inter', sans-serif);
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #4d372b;
+  background: #fff;
+  border: 1px solid #e7ddd2;
+  border-radius: 999px;
+  padding: 0.45rem 1rem;
+}
+
+.kit-builder__layout {
+  display: grid;
+  grid-template-columns: 1.03fr 0.97fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+@media screen and (max-width: 989px) {
+  .kit-builder__layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Steps column ────────────────────────────────────────── */
+.kit-builder__steps {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* ── Individual step card ────────────────────────────────── */
+.kit-step {
+  background: #faf7f3;
+  border: 1px solid #e7ddd2;
+  border-radius: 18px;
+  padding: 1.25rem 1rem;
+}
+
+.kit-step__header {
+  margin-bottom: 0.85rem;
+}
+
+.kit-step__title {
+  font-family: var(--font-heading-family, 'Inter', sans-serif);
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: #231b17;
+}
+
+/* ── Options grid / list ─────────────────────────────────── */
+.kit-step__options--list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.kit-step__options--grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.625rem;
+}
+
+/* ── Volume pill row (Step 2) ────────────────────────────── */
+.kit-step__options--pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.kit-volume-pill {
+  flex: 1 1 calc(25% - 0.45rem);
+  min-width: 80px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 1px solid #e7ddd2;
+  border-radius: 14px;
+  padding: 0.85rem 0.6rem;
+  cursor: pointer;
+  font-family: var(--font-heading-family, 'Inter', sans-serif);
+  font-weight: 700;
+  font-size: 1rem;
+  color: #231b17;
+  text-align: center;
+  line-height: 1.2;
+  transition: border-color 0.18s ease, background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.kit-volume-pill:hover:not(:disabled) {
+  border-color: #b58d73;
+}
+
+.kit-volume-pill--selected {
+  background: #b58d73;
+  border-color: #b58d73;
+  color: #fff;
+  box-shadow: 0 1px 4px rgba(181, 141, 115, 0.25);
+}
+
+.kit-volume-pill:disabled,
+.kit-volume-pill--soldout {
+  opacity: 0.45;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+
+.kit-volume-pill__price {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-top: 0.2rem;
+  opacity: 0.85;
+}
+
+/* ── Option button ───────────────────────────────────────── */
+.kit-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: #fff;
+  border: 1px solid #e7ddd2;
+  border-radius: 14px;
+  padding: 0.875rem;
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+  position: relative;
+}
+
+.kit-option:hover {
+  border-color: #b58d73;
+}
+
+.kit-option--selected {
+  background: #f8e9ef;
+  border-color: #b58d73;
+  box-shadow: inset 0 0 0 3px rgba(181, 141, 115, 0.14);
+}
+
+.kit-option__image {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 8px;
+  display: block;
+  margin-bottom: 0.5rem;
+  background: #f0e8e0;
+}
+
+.kit-option__image-placeholder {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 8px;
+  background: #f0e8e0;
+  margin-bottom: 0.5rem;
+}
+
+.kit-option__name {
+  display: block;
+  font-family: var(--font-heading-family, 'Inter', sans-serif);
+  font-weight: 700;
+  font-size: 1rem;
+  color: #231b17;
+  line-height: 1.45;
+}
+
+.kit-option__price {
+  display: block;
+  font-size: 0.875rem;
+  color: #4d372b;
+  font-weight: 600;
+  margin-top: 0.2rem;
+}
+
+.kit-option__desc {
+  display: block;
+  font-size: 0.8125rem;
+  color: #6d635c;
+  margin-top: 0.2rem;
+  line-height: 1.45;
+}
+
+.kit-option__badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  border-radius: 4px;
+  padding: 0.1rem 0.4rem;
+  margin-top: 0.3rem;
+}
+
+.kit-option__badge--sold-out {
+  background: #f3e0e0;
+  color: #8b3a3a;
+}
+
+/* ── Variant selector inside option ──────────────────────── */
+.kit-option__variants {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.5rem;
+}
+
+.kit-variant-btn {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.6rem;
+  border-radius: 6px;
+  border: 1px solid #e7ddd2;
+  background: #fff;
+  color: #231b17;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  line-height: 1.4;
+}
+
+.kit-variant-btn:hover {
+  border-color: #b58d73;
+}
+
+.kit-variant-btn--selected {
+  background: #b58d73;
+  border-color: #b58d73;
+  color: #fff;
+}
+
+.kit-variant-btn--soldout {
+  opacity: 0.45;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+
+/* ── Shade dropdown ──────────────────────────────────────── */
+.kit-shade-dropdown {
+  position: relative;
+  width: 100%;
+}
+
+.kit-shade-dropdown__select {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background: #fff;
+  border: 1px solid #e7ddd2;
+  border-radius: 14px;
+  padding: 0.875rem 2.5rem 0.875rem 1rem;
+  font-family: var(--font-heading-family, 'Inter', sans-serif);
+  font-weight: 700;
+  font-size: 1rem;
+  color: #231b17;
+  cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  line-height: 1.45;
+}
+
+.kit-shade-dropdown__select:hover {
+  border-color: #b58d73;
+}
+
+.kit-shade-dropdown__select:focus {
+  outline: none;
+  border-color: #b58d73;
+  box-shadow: 0 0 0 3px rgba(181, 141, 115, 0.14);
+}
+
+.kit-shade-dropdown__icon {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #6d635c;
+}
+
+/* ── Summary panel ───────────────────────────────────────── */
+.kit-builder__summary {
+  position: sticky;
+  top: 6rem;
+}
+
+.kit-summary__inner {
+  background: linear-gradient(180deg, #edf5ef 0%, #fbf6f1 100%);
+  border: 1px solid #e7ddd2;
+  border-radius: 20px;
+  padding: 1.25rem;
+}
+
+.kit-summary__eyebrow {
+  font-size: 0.8125rem;
+  color: #6d635c;
+  margin: 0 0 0.2rem;
+}
+
+.kit-summary__title {
+  font-family: var(--font-heading-family, 'Inter', sans-serif);
+  font-weight: 700;
+  font-size: 1.2rem;
+  color: #231b17;
+  margin: 0 0 1rem;
+}
+
+.kit-summary__rows {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1.5rem;
+}
+
+.kit-summary__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding-block: 0.6rem;
+  border-bottom: 1px solid #eee4da;
+}
+
+.kit-summary__row:last-child {
+  border-bottom: none;
+}
+
+.kit-summary__label {
+  font-size: 0.875rem;
+  color: #231b17;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.kit-summary__value {
+  font-family: var(--font-heading-family, 'Inter', sans-serif);
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: #231b17;
+  text-align: right;
+}
+
+/* ── CTA buttons ─────────────────────────────────────────── */
+.kit-summary__actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.kit-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 14px;
+  font-family: var(--font-heading-family, 'Inter', sans-serif);
+  font-weight: 700;
+  font-size: 1rem;
+  padding: 0.78rem 1.3rem;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: opacity 0.18s ease, transform 0.12s ease;
+  line-height: 1;
+}
+
+.kit-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.kit-btn:not(:disabled):active {
+  transform: scale(0.97);
+}
+
+.kit-btn--primary {
+  background: #d4af51;
+  color: #fff;
+}
+
+.kit-btn--primary:not(:disabled):hover {
+  background: #c19d3e;
+}
+
+.kit-btn--secondary {
+  background: #fff;
+  color: #2a201a;
+  border-color: #e7ddd2;
+}
+
+.kit-btn--secondary:not(:disabled):hover {
+  border-color: #b58d73;
+}
+
+/* ── Status message ──────────────────────────────────────── */
+.kit-message {
+  margin-top: 0.75rem;
+  font-size: 0.875rem;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+}
+
+.kit-message--success {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+.kit-message--error {
+  background: #fdecea;
+  color: #c62828;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kit-option, .kit-btn, .kit-variant-btn, .kit-volume-pill { transition: none; }
+}
+</style>
+
+<div class="kit-builder page-width" id="KitBuilder-{{ section.id }}">
+
+  {% if section.settings.label != blank %}
+    <div class="kit-builder__header">
+      <span class="kit-builder__label">{{ section.settings.label }}</span>
+    </div>
+  {% endif %}
+
+  <div class="kit-builder__layout">
+
+    <!-- LEFT: Steps -->
+    <div class="kit-builder__steps">
+
+      <!-- Step 1: Shade (DROPDOWN) -->
+      {% assign shade_collection = section.settings.shade_collection %}
+      {% if shade_collection %}
+        <div class="kit-step">
+          <div class="kit-step__header">
+            <span class="kit-step__title">Step 1 · {{ section.settings.shade_label | default: 'Select shade' }}</span>
+          </div>
+
+          <div class="kit-shade-dropdown">
+            <select
+              class="kit-shade-dropdown__select"
+              id="kit-shade-select-{{ section.id }}"
+              data-step="shade"
+            >
+              <option value="" disabled>Choose a shade…</option>
+              {% for product in shade_collection.products limit: section.settings.products_limit %}
+                {%- assign first_available = product.first_available_variant | default: product.variants.first -%}
+
+                {% if product.variants.size > 1 %}
+                  {%- for variant in product.variants -%}
+                    <option
+                      value="{{ variant.id }}"
+                      data-product-id="{{ product.id }}"
+                      data-product-title="{{ product.title }}"
+                      data-variant-title="{{ variant.title }}"
+                      {% unless variant.available %}disabled{% endunless %}
+                      {% if forloop.parentloop.first and forloop.first %}selected{% endif %}
+                    >
+                      {{ product.title }}{% if variant.title != 'Default Title' %} – {{ variant.title }}{% endif %}{% unless variant.available %} (Sold out){% endunless %}
+                    </option>
+                  {%- endfor -%}
+                {% else %}
+                  <option
+                    value="{{ first_available.id }}"
+                    data-product-id="{{ product.id }}"
+                    data-product-title="{{ product.title }}"
+                    data-variant-title="{{ first_available.title }}"
+                    {% unless product.available %}disabled{% endunless %}
+                    {% if forloop.first %}selected{% endif %}
+                  >
+                    {{ product.title }}{% unless product.available %} (Sold out){% endunless %}
+                  </option>
+                {% endif %}
+              {% endfor %}
+            </select>
+
+            <span class="kit-shade-dropdown__icon" aria-hidden="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </span>
+          </div>
+        </div>
+      {% endif %}
+
+      <!-- Step 2: Developer (VOLUME PILLS — 1 pill per product) -->
+      {% assign developer_collection = section.settings.developer_collection %}
+      {% if developer_collection %}
+        <div class="kit-step">
+          <div class="kit-step__header">
+            <span class="kit-step__title">Step 2 · {{ section.settings.developer_label | default: 'Select developer volume' }}</span>
+          </div>
+          <div class="kit-step__options kit-step__options--pills" data-step="developer" role="radiogroup" aria-label="Developer volume">
+            {%- assign first_available_idx = -1 -%}
+            {%- for product in developer_collection.products limit: section.settings.products_limit -%}
+              {%- if product.available and first_available_idx == -1 -%}
+                {%- assign first_available_idx = forloop.index0 -%}
+              {%- endif -%}
+            {%- endfor -%}
+
+            {% for product in developer_collection.products limit: section.settings.products_limit %}
+              {%- assign first_available = product.first_available_variant | default: product.variants.first -%}
+
+              {%- comment -%} Auto-detect volume number from product title (first integer) {%- endcomment -%}
+              {%- assign vol_label = product.title -%}
+              {%- assign t = product.title | downcase -%}
+              {%- assign found = '' -%}
+              {%- assign chars = '0,1,2,3,4,5,6,7,8,9' | split: ',' -%}
+              {%- assign clean = t | replace: 'volume', ' ' | replace: 'vol.', ' ' | replace: 'vol', ' ' | replace: 'developer', ' ' -%}
+              {%- assign words = clean | split: ' ' -%}
+              {%- for w in words -%}
+                {%- assign w_trim = w | strip -%}
+                {%- if w_trim != '' -%}
+                  {%- assign is_num = true -%}
+                  {%- assign w_chars = w_trim | split: '' -%}
+                  {%- for c in w_chars -%}
+                    {%- unless chars contains c -%}
+                      {%- assign is_num = false -%}
+                    {%- endunless -%}
+                  {%- endfor -%}
+                  {%- if is_num and found == '' -%}
+                    {%- assign found = w_trim -%}
+                  {%- endif -%}
+                {%- endif -%}
+              {%- endfor -%}
+              {%- if found != '' -%}
+                {%- assign vol_label = found | append: ' Vol' -%}
+              {%- endif -%}
+
+              <button
+                type="button"
+                class="kit-volume-pill{% if forloop.index0 == first_available_idx %} kit-volume-pill--selected{% endif %}{% unless product.available %} kit-volume-pill--soldout{% endunless %}"
+                data-step="developer"
+                data-product-id="{{ product.id }}"
+                data-product-title="{{ product.title | escape }}"
+                data-variant-id="{{ first_available.id }}"
+                data-variant-title="{{ first_available.title | escape }}"
+                role="radio"
+                aria-checked="{% if forloop.index0 == first_available_idx %}true{% else %}false{% endif %}"
+                {% unless product.available %}disabled aria-disabled="true"{% endunless %}
+              >
+                <span>
+                  {{ vol_label }}
+                  <span class="kit-volume-pill__price">{{ first_available.price | money }}</span>
+                </span>
+              </button>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+
+      <!-- Step 3: Tools (from collection, grid layout) -->
+      {% assign tools_collection = section.settings.tools_collection %}
+      {% if tools_collection %}
+        <div class="kit-step">
+          <div class="kit-step__header">
+            <span class="kit-step__title">Step 3 · {{ section.settings.tools_label | default: 'Add tools / support' }}</span>
+          </div>
+          <div class="kit-step__options kit-step__options--grid" data-step="tools">
+            {% for product in tools_collection.products limit: section.settings.products_limit %}
+              {%- assign first_available = product.first_available_variant | default: product.variants.first -%}
+              <button
+                type="button"
+                class="kit-option{% if forloop.first %} kit-option--selected{% endif %}"
+                data-step="tools"
+                data-product-id="{{ product.id }}"
+                data-product-title="{{ product.title }}"
+                data-variant-id="{{ first_available.id }}"
+                data-variant-title="{{ first_available.title }}"
+                aria-pressed="{% if forloop.first %}true{% else %}false{% endif %}"
+              >
+                {%- if product.featured_image -%}
+                  <img
+                    class="kit-option__image"
+                    src="{{ product.featured_image | image_url: width: 300 }}"
+                    alt="{{ product.featured_image.alt | escape | default: product.title }}"
+                    loading="lazy"
+                    width="300"
+                    height="300"
+                  >
+                {%- else -%}
+                  <div class="kit-option__image-placeholder"></div>
+                {%- endif -%}
+                <span class="kit-option__name">{{ product.title }}</span>
+                <span class="kit-option__price">{{ first_available.price | money }}</span>
+                {%- if product.description != blank -%}
+                  <span class="kit-option__desc">{{ product.description | strip_html | truncate: 60 }}</span>
+                {%- endif -%}
+                {%- if product.variants.size > 1 -%}
+                  <div class="kit-option__variants" data-step="tools" data-product-id="{{ product.id }}">
+                    {%- for variant in product.variants -%}
+                      <button
+                        type="button"
+                        class="kit-variant-btn{% if forloop.first %} kit-variant-btn--selected{% endif %}{% unless variant.available %} kit-variant-btn--soldout{% endunless %}"
+                        data-product-id="{{ product.id }}"
+                        data-variant-id="{{ variant.id }}"
+                        data-variant-title="{{ variant.title }}"
+                        data-step="tools"
+                        {% unless variant.available %}disabled aria-disabled="true"{% endunless %}
+                      >{{ variant.title }}</button>
+                    {%- endfor -%}
+                  </div>
+                {%- endif -%}
+                {% unless product.available %}
+                  <span class="kit-option__badge kit-option__badge--sold-out">Sold out</span>
+                {% endunless %}
+              </button>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+
+      <!-- Step 4: Aftercare (from collection, grid layout) -->
+      {% assign aftercare_collection = section.settings.aftercare_collection %}
+      {% if aftercare_collection %}
+        <div class="kit-step">
+          <div class="kit-step__header">
+            <span class="kit-step__title">Step 4 · {{ section.settings.aftercare_label | default: 'Add aftercare' }}</span>
+          </div>
+          <div class="kit-step__options kit-step__options--grid" data-step="aftercare">
+            {% for product in aftercare_collection.products limit: section.settings.products_limit %}
+              {%- assign first_available = product.first_available_variant | default: product.variants.first -%}
+              <button
+                type="button"
+                class="kit-option{% if forloop.first %} kit-option--selected{% endif %}"
+                data-step="aftercare"
+                data-product-id="{{ product.id }}"
+                data-product-title="{{ product.title }}"
+                data-variant-id="{{ first_available.id }}"
+                data-variant-title="{{ first_available.title }}"
+                aria-pressed="{% if forloop.first %}true{% else %}false{% endif %}"
+              >
+                {%- if product.featured_image -%}
+                  <img
+                    class="kit-option__image"
+                    src="{{ product.featured_image | image_url: width: 300 }}"
+                    alt="{{ product.featured_image.alt | escape | default: product.title }}"
+                    loading="lazy"
+                    width="300"
+                    height="300"
+                  >
+                {%- else -%}
+                  <div class="kit-option__image-placeholder"></div>
+                {%- endif -%}
+                <span class="kit-option__name">{{ product.title }}</span>
+                <span class="kit-option__price">{{ first_available.price | money }}</span>
+                {%- if product.description != blank -%}
+                  <span class="kit-option__desc">{{ product.description | strip_html | truncate: 60 }}</span>
+                {%- endif -%}
+                {%- if product.variants.size > 1 -%}
+                  <div class="kit-option__variants" data-step="aftercare" data-product-id="{{ product.id }}">
+                    {%- for variant in product.variants -%}
+                      <button
+                        type="button"
+                        class="kit-variant-btn{% if forloop.first %} kit-variant-btn--selected{% endif %}{% unless variant.available %} kit-variant-btn--soldout{% endunless %}"
+                        data-product-id="{{ product.id }}"
+                        data-variant-id="{{ variant.id }}"
+                        data-variant-title="{{ variant.title }}"
+                        data-step="aftercare"
+                        {% unless variant.available %}disabled aria-disabled="true"{% endunless %}
+                      >{{ variant.title }}</button>
+                    {%- endfor -%}
+                  </div>
+                {%- endif -%}
+                {% unless product.available %}
+                  <span class="kit-option__badge kit-option__badge--sold-out">Sold out</span>
+                {% endunless %}
+              </button>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+
+    </div><!-- /.kit-builder__steps -->
+
+    <!-- RIGHT: Summary -->
+    <div class="kit-builder__summary">
+      <div class="kit-summary__inner">
+        <p class="kit-summary__eyebrow">Your complete system</p>
+        <h2 class="kit-summary__title">{{ section.settings.summary_title | default: 'Kit summary' }}</h2>
+
+        <div class="kit-summary__rows">
+          <div class="kit-summary__row">
+            <span class="kit-summary__label">{{ section.settings.shade_label | default: 'Hair Color' }}</span>
+            <span class="kit-summary__value" data-summary="shade">—</span>
+          </div>
+          <div class="kit-summary__row">
+            <span class="kit-summary__label">{{ section.settings.developer_label | default: 'Developer' }}</span>
+            <span class="kit-summary__value" data-summary="developer">—</span>
+          </div>
+          <div class="kit-summary__row">
+            <span class="kit-summary__label">{{ section.settings.tools_label | default: 'Tools / Add-ons' }}</span>
+            <span class="kit-summary__value" data-summary="tools">—</span>
+          </div>
+          <div class="kit-summary__row">
+            <span class="kit-summary__label">{{ section.settings.aftercare_label | default: 'Aftercare' }}</span>
+            <span class="kit-summary__value" data-summary="aftercare">—</span>
+          </div>
+        </div>
+
+        <div class="kit-summary__actions">
+          <button type="button" id="kit-add-complete-{{ section.id }}" class="kit-btn kit-btn--primary">
+            <span class="kit-btn__text">{{ section.settings.btn_kit_label | default: 'Add Complete Kit' }}</span>
+            <span class="kit-btn__spinner" hidden>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3"
+                  stroke-dasharray="30 70" stroke-linecap="round">
+                  <animateTransform attributeName="transform" type="rotate"
+                    from="0 12 12" to="360 12 12" dur="0.8s" repeatCount="indefinite"/>
+                </circle>
+              </svg>
+            </span>
+          </button>
+          <button type="button" id="kit-buy-single-{{ section.id }}" class="kit-btn kit-btn--secondary">
+            {{ section.settings.btn_single_label | default: 'Buy Single Tube' }}
+          </button>
+        </div>
+
+        <div id="kit-message-{{ section.id }}" class="kit-message" role="alert" aria-live="polite" hidden></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function () {
+  const root = document.getElementById('KitBuilder-{{ section.id }}');
+  if (!root) return;
+
+  // selections store: step → { variantId, title, productId }
+  const selections = {
+    shade:     { variantId: null, title: '—', productId: null },
+    developer: { variantId: null, title: '—', productId: null },
+    tools:     { variantId: null, title: '—', productId: null },
+    aftercare: { variantId: null, title: '—', productId: null },
+  };
+
+  // ── Seed shade from dropdown ──
+  const shadeSelect = document.getElementById('kit-shade-select-{{ section.id }}');
+  if (shadeSelect) {
+    seedShadeFromDropdown();
+    shadeSelect.addEventListener('change', seedShadeFromDropdown);
+  }
+
+  function seedShadeFromDropdown() {
+    const opt = shadeSelect.options[shadeSelect.selectedIndex];
+    if (!opt || !opt.value) {
+      selections.shade = { variantId: null, title: '—', productId: null };
+    } else {
+      const productTitle = opt.dataset.productTitle || '';
+      const variantTitle = opt.dataset.variantTitle || '';
+      selections.shade.variantId = opt.value;
+      selections.shade.productId = opt.dataset.productId || null;
+      selections.shade.title = buildTitle(productTitle, variantTitle);
+    }
+    updateSummary();
+  }
+
+  // ── Seed initial selections from pre-selected product cards (steps 3-4) ──
+  root.querySelectorAll('.kit-option--selected').forEach(btn => {
+    const step = btn.dataset.step;
+    if (step && step !== 'shade' && selections[step] !== undefined) {
+      selections[step].variantId = btn.dataset.variantId;
+      selections[step].title     = btn.dataset.productTitle + (btn.dataset.variantTitle && btn.dataset.variantTitle !== 'Default Title' ? ' – ' + btn.dataset.variantTitle : '');
+      selections[step].productId = btn.dataset.productId;
+    }
+  });
+
+  // ── Seed initial selection from pre-selected developer volume pill ──
+  const initialPill = root.querySelector('.kit-volume-pill--selected');
+  if (initialPill && !initialPill.disabled) {
+    selections.developer.variantId = initialPill.dataset.variantId;
+    selections.developer.productId = initialPill.dataset.productId;
+    selections.developer.title     = buildTitle(
+      initialPill.dataset.productTitle,
+      initialPill.dataset.variantTitle
+    );
+  }
+
+  updateSummary();
+
+  // ── Volume pill click (Step 2) ──
+  root.querySelectorAll('.kit-volume-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      if (pill.disabled) return;
+
+      root.querySelectorAll('.kit-volume-pill').forEach(p => {
+        p.classList.remove('kit-volume-pill--selected');
+        p.setAttribute('aria-checked', 'false');
+      });
+      pill.classList.add('kit-volume-pill--selected');
+      pill.setAttribute('aria-checked', 'true');
+
+      selections.developer.variantId = pill.dataset.variantId;
+      selections.developer.productId = pill.dataset.productId;
+      selections.developer.title     = buildTitle(
+        pill.dataset.productTitle,
+        pill.dataset.variantTitle
+      );
+      updateSummary();
+    });
+  });
+
+  // ── Product card click: select product, update variant highlight ──
+  root.querySelectorAll('.kit-option').forEach(btn => {
+    if (btn.classList.contains('kit-variant-btn')) return;
+
+    btn.addEventListener('click', (e) => {
+      if (e.target.closest('.kit-variant-btn')) return;
+
+      const step = btn.dataset.step;
+      if (!step) return;
+
+      root.querySelectorAll(`.kit-option[data-step="${step}"]`).forEach(s => {
+        s.classList.remove('kit-option--selected');
+        s.setAttribute('aria-pressed', 'false');
+      });
+
+      btn.classList.add('kit-option--selected');
+      btn.setAttribute('aria-pressed', 'true');
+
+      const activePill = btn.querySelector('.kit-variant-btn--selected');
+      const variantId    = activePill ? activePill.dataset.variantId    : btn.dataset.variantId;
+      const variantTitle = activePill ? activePill.dataset.variantTitle : btn.dataset.variantTitle;
+
+      selections[step].variantId = variantId;
+      selections[step].productId = btn.dataset.productId;
+      selections[step].title     = buildTitle(btn.dataset.productTitle, variantTitle);
+      updateSummary();
+    });
+  });
+
+  // ── Variant pill click (inside card) ──
+  root.querySelectorAll('.kit-variant-btn').forEach(pill => {
+    pill.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (pill.disabled) return;
+
+      const step      = pill.dataset.step;
+      const productId = pill.dataset.productId;
+      if (!step || !productId) return;
+
+      root.querySelectorAll(`.kit-variant-btn[data-product-id="${productId}"][data-step="${step}"]`).forEach(p => {
+        p.classList.remove('kit-variant-btn--selected');
+      });
+      pill.classList.add('kit-variant-btn--selected');
+
+      const parentCard = root.querySelector(`.kit-option[data-product-id="${productId}"][data-step="${step}"]`);
+      if (parentCard) {
+        root.querySelectorAll(`.kit-option[data-step="${step}"]`).forEach(s => {
+          s.classList.remove('kit-option--selected');
+          s.setAttribute('aria-pressed', 'false');
+        });
+        parentCard.classList.add('kit-option--selected');
+        parentCard.setAttribute('aria-pressed', 'true');
+        parentCard.dataset.variantId    = pill.dataset.variantId;
+        parentCard.dataset.variantTitle = pill.dataset.variantTitle;
+      }
+
+      selections[step].variantId = pill.dataset.variantId;
+      selections[step].productId = productId;
+      selections[step].title     = buildTitle(
+        parentCard ? parentCard.dataset.productTitle : '',
+        pill.dataset.variantTitle
+      );
+      updateSummary();
+    });
+  });
+
+  function buildTitle(productTitle, variantTitle) {
+    if (!variantTitle || variantTitle === 'Default Title') return productTitle || '—';
+    return (productTitle ? productTitle + ' – ' : '') + variantTitle;
+  }
+
+  function updateSummary() {
+    Object.keys(selections).forEach(step => {
+      const el = root.querySelector('[data-summary="' + step + '"]');
+      if (el) el.textContent = selections[step].title || '—';
+    });
+  }
+
+  // ── Add Complete Kit ──
+  document.getElementById('kit-add-complete-{{ section.id }}').addEventListener('click', async () => {
+    const items = Object.values(selections)
+      .filter(s => s.variantId)
+      .map(s => ({ id: parseInt(s.variantId, 10), quantity: 1 }));
+    if (!items.length) { showMsg('Please make a selection first.', 'error'); return; }
+    await addToCart(items, 'kit-add-complete-{{ section.id }}');
+  });
+
+  // ── Buy Single Tube (shade only) ──
+  document.getElementById('kit-buy-single-{{ section.id }}').addEventListener('click', async () => {
+    const { variantId } = selections.shade;
+    if (!variantId) { showMsg('Please select a shade first.', 'error'); return; }
+    await addToCart([{ id: parseInt(variantId, 10), quantity: 1 }], 'kit-buy-single-{{ section.id }}');
+  });
+
+  async function addToCart(items, btnId) {
+    const btn    = document.getElementById(btnId);
+    const textEl = btn.querySelector('.kit-btn__text');
+    const spinEl = btn.querySelector('.kit-btn__spinner');
+    btn.disabled = true;
+    if (textEl) textEl.hidden = true;
+    if (spinEl) spinEl.hidden = false;
+    hideMsg();
+
+    try {
+      const res  = await fetch('/cart/add.js', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ items }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.description || data.message || 'Could not add to cart.');
+
+      showMsg('Added to cart!', 'success');
+
+      document.dispatchEvent(new CustomEvent('cart:refresh', { bubbles: true }));
+      const cartTrigger = document.querySelector(
+        '[data-action="open-cart"], #cart-icon-bubble, .js-drawer-open-cart'
+      );
+      if (cartTrigger) cartTrigger.click();
+
+    } catch (err) {
+      showMsg(err.message || 'Something went wrong. Please try again.', 'error');
+    } finally {
+      btn.disabled = false;
+      if (textEl) textEl.hidden = false;
+      if (spinEl) spinEl.hidden = true;
+    }
+  }
+
+  function showMsg(text, type) {
+    const el = document.getElementById('kit-message-{{ section.id }}');
+    el.textContent = text;
+    el.className   = 'kit-message kit-message--' + type;
+    el.hidden      = false;
+    setTimeout(hideMsg, 4000);
+  }
+  function hideMsg() {
+    const el = document.getElementById('kit-message-{{ section.id }}');
+    if (el) el.hidden = true;
+  }
+})();
+</script>
+
+{% schema %}
+{
+  "name": "Kit Builder",
+  "tag": "section",
+  "class": "section",
+  "settings": [
+    {
+      "type": "text",
+      "id": "label",
+      "label": "Section label text",
+      "default": "Kit Builder"
+    },
+    {
+      "type": "text",
+      "id": "summary_title",
+      "label": "Summary panel heading",
+      "default": "Kit summary"
+    },
+    {
+      "type": "range",
+      "id": "products_limit",
+      "label": "Max products to show per step",
+      "min": 2,
+      "max": 24,
+      "step": 1,
+      "default": 12
+    },
+    {
+      "type": "header",
+      "content": "Step 1 — Shade"
+    },
+    {
+      "type": "collection",
+      "id": "shade_collection",
+      "label": "Shade collection",
+      "info": "Each product in this collection becomes a selectable shade option."
+    },
+    {
+      "type": "text",
+      "id": "shade_label",
+      "label": "Step label",
+      "default": "Select shade"
+    },
+    {
+      "type": "header",
+      "content": "Step 2 — Developer"
+    },
+    {
+      "type": "collection",
+      "id": "developer_collection",
+      "label": "Developer collection",
+      "info": "Each product becomes a volume pill. Pill label is auto-detected from the product title (e.g. '10 Volume Developer' → '10 Vol')."
+    },
+    {
+      "type": "text",
+      "id": "developer_label",
+      "label": "Step label",
+      "default": "Select developer volume"
+    },
+    {
+      "type": "header",
+      "content": "Step 3 — Tools"
+    },
+    {
+      "type": "collection",
+      "id": "tools_collection",
+      "label": "Tools / support collection",
+      "info": "Each product in this collection becomes a selectable tools option."
+    },
+    {
+      "type": "text",
+      "id": "tools_label",
+      "label": "Step label",
+      "default": "Add tools / support"
+    },
+    {
+      "type": "header",
+      "content": "Step 4 — Aftercare"
+    },
+    {
+      "type": "collection",
+      "id": "aftercare_collection",
+      "label": "Aftercare collection",
+      "info": "Each product in this collection becomes a selectable aftercare option."
+    },
+    {
+      "type": "text",
+      "id": "aftercare_label",
+      "label": "Step label",
+      "default": "Add aftercare"
+    },
+    {
+      "type": "header",
+      "content": "Button labels"
+    },
+    {
+      "type": "text",
+      "id": "btn_kit_label",
+      "label": "Add Complete Kit button",
+      "default": "Add Complete Kit"
+    },
+    {
+      "type": "text",
+      "id": "btn_single_label",
+      "label": "Buy Single button",
+      "default": "Buy Single Tube"
+    }
+  ],
+  "presets": [
+    {
+      "name": "Kit Builder"
+    }
+  ]
+}
+{% endschema %}
