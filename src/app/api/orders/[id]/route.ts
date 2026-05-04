@@ -4,9 +4,10 @@ import { MOCK_ORDERS } from "@/lib/mockData";
 // GET /api/orders/[id]
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const order = MOCK_ORDERS.find((o) => o.id === params.id);
+  const { id } = await params;
+  const order = MOCK_ORDERS.find((o) => o.id === id);
   if (!order) {
     return NextResponse.json({ error: "Order not found" }, { status: 404 });
   }
@@ -16,11 +17,12 @@ export async function GET(
 // PATCH /api/orders/[id] — update status etc.
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body  = await req.json();
-    const order = MOCK_ORDERS.find((o) => o.id === params.id);
+    const order = MOCK_ORDERS.find((o) => o.id === id);
     if (!order) {
       return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
@@ -35,12 +37,13 @@ export async function PATCH(
 // DELETE /api/orders/[id]
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const order = MOCK_ORDERS.find((o) => o.id === params.id);
+  const { id } = await params;
+  const order = MOCK_ORDERS.find((o) => o.id === id);
   if (!order) {
     return NextResponse.json({ error: "Order not found" }, { status: 404 });
   }
   // TODO: soft-delete in DB
-  return NextResponse.json({ message: "Order cancelled", id: params.id });
+  return NextResponse.json({ message: "Order cancelled", id });
 }

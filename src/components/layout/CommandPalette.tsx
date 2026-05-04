@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Search, ShoppingBag, Package, Users, BarChart2, Settings, ArrowRight, X } from "lucide-react";
 import { MOCK_ORDERS, MOCK_PRODUCTS, MOCK_CUSTOMERS } from "@/lib/mockData";
@@ -44,49 +44,50 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
   }, [isOpen]);
 
   // Build results
-  const results: SearchResult[] = query.trim()
-    ? [
-        ...PAGES.filter((p) =>
-          p.label.toLowerCase().includes(query.toLowerCase())
-        ),
-        ...MOCK_ORDERS.filter(
-          (o) =>
-            o.orderNumber.toLowerCase().includes(query.toLowerCase()) ||
-            o.customer.toLowerCase().includes(query.toLowerCase()) ||
-            o.company.toLowerCase().includes(query.toLowerCase())
-        ).slice(0, 3).map((o) => ({
-          id: o.id,
-          type: "order" as const,
-          label: o.orderNumber,
-          sub: `${o.customer} · ${o.company}`,
-          href: `/dashboard/orders/${o.id}`,
-          emoji: "📦",
-        })),
-        ...MOCK_PRODUCTS.filter((p) =>
-          p.name.toLowerCase().includes(query.toLowerCase()) ||
-          p.brand.toLowerCase().includes(query.toLowerCase())
-        ).slice(0, 3).map((p) => ({
-          id: String(p.id),
-          type: "product" as const,
-          label: p.name,
-          sub: `${p.brand} · ₹${p.price}`,
-          href: `/dashboard/products/${p.id}`,
-          emoji: p.emoji,
-        })),
-        ...MOCK_CUSTOMERS.filter(
-          (c) =>
-            c.name.toLowerCase().includes(query.toLowerCase()) ||
-            c.company.toLowerCase().includes(query.toLowerCase())
-        ).slice(0, 3).map((c) => ({
-          id: c.id,
-          type: "customer" as const,
-          label: c.name,
-          sub: c.company,
-          href: `/dashboard/customers/${c.id}`,
-          emoji: "👤",
-        })),
-      ]
-    : PAGES;
+  const results = useMemo(() => {
+    if (!query.trim()) return PAGES;
+    return [
+      ...PAGES.filter((p) =>
+        p.label.toLowerCase().includes(query.toLowerCase())
+      ),
+      ...MOCK_ORDERS.filter(
+        (o) =>
+          o.orderNumber.toLowerCase().includes(query.toLowerCase()) ||
+          o.customer.toLowerCase().includes(query.toLowerCase()) ||
+          o.company.toLowerCase().includes(query.toLowerCase())
+      ).slice(0, 3).map((o) => ({
+        id: o.id,
+        type: "order" as const,
+        label: o.orderNumber,
+        sub: `${o.customer} · ${o.company}`,
+        href: `/dashboard/orders/${o.id}`,
+        emoji: "📦",
+      })),
+      ...MOCK_PRODUCTS.filter((p) =>
+        p.name.toLowerCase().includes(query.toLowerCase()) ||
+        p.brand.toLowerCase().includes(query.toLowerCase())
+      ).slice(0, 3).map((p) => ({
+        id: String(p.id),
+        type: "product" as const,
+        label: p.name,
+        sub: `${p.brand} · ₹${p.price}`,
+        href: `/dashboard/products/${p.id}`,
+        emoji: p.emoji,
+      })),
+      ...MOCK_CUSTOMERS.filter(
+        (c) =>
+          c.name.toLowerCase().includes(query.toLowerCase()) ||
+          c.company.toLowerCase().includes(query.toLowerCase())
+      ).slice(0, 3).map((c) => ({
+        id: c.id,
+        type: "customer" as const,
+        label: c.name,
+        sub: c.company,
+        href: `/dashboard/customers/${c.id}`,
+        emoji: "👤",
+      })),
+    ];
+  }, [query]);
 
   // Keyboard navigation
   useEffect(() => {
