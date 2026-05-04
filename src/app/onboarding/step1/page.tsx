@@ -46,7 +46,7 @@ export default function OnboardingStep1() {
             Tell Us About Your Company
           </h1>
           <p className="text-gray-500 text-sm leading-relaxed">
-            Let's get started — share your details and we'll craft a gifting experience that speaks your brand's language.
+            Let&apos;s get started — share your details and we&apos;ll craft a gifting experience that speaks your brand&apos;s language.
           </p>
         </div>
 

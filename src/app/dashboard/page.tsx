@@ -66,7 +66,7 @@ export default function DashboardPage() {
             Good morning, John 👋
           </h1>
           <p className="text-nutado-gray-500 text-sm mt-1">
-            Here's what's happening with your store today.
+            Here&apos;s what&apos;s happening with your store today.
           </p>
         </div>
         <Link href="/onboarding/step1" className="btn-primary flex items-center gap-2 text-sm hidden sm:flex">

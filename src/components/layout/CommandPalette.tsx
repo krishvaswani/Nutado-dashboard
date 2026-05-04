@@ -147,7 +147,7 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
         <div className="max-h-80 overflow-y-auto py-2">
           {results.length === 0 ? (
             <div className="text-center py-10 text-nutado-gray-400 text-sm">
-              No results for "{query}"
+              No results for &quot;{query}&quot;
             </div>
           ) : (
             results.map((r, i) => (

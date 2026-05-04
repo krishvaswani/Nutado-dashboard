@@ -12,7 +12,7 @@ export default function NotFound() {
           404 — Page Not Found
         </h1>
         <p className="text-nutado-gray-500 text-base mb-8 leading-relaxed">
-          Looks like this snack got lost in transit! The page you're looking for doesn't exist or has been moved.
+          Looks like this snack got lost in transit! The page you&apos;re looking for doesn&apos;t exist or has been moved.
         </p>
 
         {/* Actions */}
