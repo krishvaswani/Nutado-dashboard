@@ -1,17 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Search, Filter, Download, Eye } from "lucide-react";
-import { MOCK_ORDERS } from "@/lib/mockData";
+import { Search, Filter, Eye } from "lucide-react";
+import { useOrders } from "@/hooks/useOrders";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import StatusBadge from "@/components/ui/StatusBadge";
 import type { OrderStatus } from "@/types";
-import { exportToCSV, formatOrdersForExport } from "@/lib/export";
 
-const STATUS_FILTERS: { label: string; value: OrderStatus | "all" }[] = [
-  { label: "All", value: "all" },
-  { label: "Pending", value: "pending" },
+const STATUS_FILTERS: { label: string; value: Exclude<OrderStatus, "pending"> | "all" }[] = [
+  { label: "All Active", value: "all" },
   { label: "Processing", value: "processing" },
   { label: "Shipped", value: "shipped" },
   { label: "Delivered", value: "delivered" },
@@ -19,35 +17,42 @@ const STATUS_FILTERS: { label: string; value: OrderStatus | "all" }[] = [
 ];
 
 export default function OrdersPage() {
+  const { orders, loading } = useOrders();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");
 
-  const filtered = MOCK_ORDERS.filter((o) => {
-    const matchSearch =
-      o.orderNumber.toLowerCase().includes(search.toLowerCase()) ||
-      o.customer.toLowerCase().includes(search.toLowerCase()) ||
-      o.company.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = statusFilter === "all" || o.status === statusFilter;
-    return matchSearch && matchStatus;
-  });
+  const filtered = useMemo(() => {
+    return (orders || []).filter((order) => {
+      if (!order) return false;
+      // Exclude Enquiries (status: 'pending') from the active Orders view
+      if (order.status === "pending") return false;
+
+      const orderNumber = order.orderNumber || "";
+      const customer = order.customer || "";
+      const company = order.company || "";
+      
+      const matchSearch =
+        orderNumber.toLowerCase().includes(search.toLowerCase()) ||
+        customer.toLowerCase().includes(search.toLowerCase()) ||
+        company.toLowerCase().includes(search.toLowerCase());
+      const matchStatus = statusFilter === "all" || order.status === statusFilter;
+      return matchSearch && matchStatus;
+    });
+  }, [orders, search, statusFilter]);
+
+  const acceptedOrdersCount = useMemo(() => {
+    return (orders || []).filter((order) => order && order.status !== "pending").length;
+  }, [orders]);
 
   return (
     <div className="space-y-5 animate-fade-in">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display font-bold text-2xl text-nutado-gray-900">Orders</h1>
-          <p className="text-sm text-nutado-gray-500 mt-0.5">{MOCK_ORDERS.length} total orders</p>
+          <p className="text-sm text-nutado-gray-500 mt-0.5">{acceptedOrdersCount} total orders</p>
         </div>
-        <button
-          onClick={() => exportToCSV(formatOrdersForExport(filtered), "nutado-orders.csv")}
-          className="btn-secondary flex items-center gap-2 text-sm py-2.5"
-        >
-          <Download size={15} /> Export CSV
-        </button>
       </div>
 
-      {/* Filters */}
       <div className="bg-white rounded-xl border border-nutado-gray-200 shadow-card p-4 flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-nutado-gray-400" />
@@ -61,40 +66,45 @@ export default function OrdersPage() {
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <Filter size={15} className="text-nutado-gray-400 flex-shrink-0" />
-          {STATUS_FILTERS.map((f) => (
+          {STATUS_FILTERS.map((filter) => (
             <button
-              key={f.value}
-              onClick={() => setStatusFilter(f.value)}
+              key={filter.value}
+              onClick={() => setStatusFilter(filter.value)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                statusFilter === f.value
+                statusFilter === filter.value
                   ? "bg-nutado-green text-white"
                   : "bg-nutado-gray-100 text-nutado-gray-600 hover:bg-nutado-gray-200"
               }`}
             >
-              {f.label}
+              {filter.label}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Table */}
       <div className="bg-white rounded-xl border border-nutado-gray-200 shadow-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr className="bg-nutado-gray-50 border-b border-nutado-gray-200">
-                {["Order ID", "Customer", "Occasion", "Qty", "Total", "Delivery", "Status", ""].map((h) => (
+                {["Order ID", "Customer", "Occasion", "Qty", "Total", "Delivery", "Status", ""].map((heading) => (
                   <th
-                    key={h}
+                    key={heading}
                     className="text-left text-[11px] font-semibold text-nutado-gray-500 uppercase tracking-wide px-5 py-3 whitespace-nowrap"
                   >
-                    {h}
+                    {heading}
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-nutado-gray-100">
-              {filtered.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={8} className="text-center py-12 text-nutado-gray-400 text-sm">
+                    Loading orders...
+                  </td>
+                </tr>
+              ) : filtered.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="text-center py-12 text-nutado-gray-400 text-sm">
                     No orders found.
@@ -136,27 +146,6 @@ export default function OrdersPage() {
               )}
             </tbody>
           </table>
-        </div>
-
-        {/* Pagination */}
-        <div className="px-5 py-3 border-t border-nutado-gray-100 flex items-center justify-between">
-          <span className="text-xs text-nutado-gray-500">
-            Showing {filtered.length} of {MOCK_ORDERS.length} orders
-          </span>
-          <div className="flex items-center gap-1">
-            {[1, 2, 3].map((p) => (
-              <button
-                key={p}
-                className={`w-8 h-8 rounded-lg text-xs font-semibold transition-colors ${
-                  p === 1
-                    ? "bg-nutado-green text-white"
-                    : "text-nutado-gray-600 hover:bg-nutado-gray-100"
-                }`}
-              >
-                {p}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
     </div>

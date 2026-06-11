@@ -33,7 +33,7 @@ export default function HamburgerMenu({ isOpen, onClose }: HamburgerMenuProps) {
 
       {/* Drawer */}
       <div
-        className={`fixed top-0 left-0 h-full w-72 bg-[#0a1a0f] z-50 transform transition-transform duration-300 ease-in-out flex flex-col ${
+        className={`fixed top-0 left-0 h-full w-72 bg-[#1a0000] z-50 transform transition-transform duration-300 ease-in-out flex flex-col ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -61,7 +61,7 @@ export default function HamburgerMenu({ isOpen, onClose }: HamburgerMenuProps) {
                     href={href}
                     className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-all text-sm"
                   >
-                    <Icon size={16} className="text-green-400 shrink-0" />
+                    <Icon size={16} className="text-red-400 shrink-0" />
                     {label}
                   </a>
                 </li>
@@ -81,7 +81,7 @@ export default function HamburgerMenu({ isOpen, onClose }: HamburgerMenuProps) {
                     href={href}
                     className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition-all text-sm"
                   >
-                    <Icon size={16} className="text-green-400 shrink-0" />
+                    <Icon size={16} className="text-red-400 shrink-0" />
                     {label}
                   </a>
                 </li>
@@ -92,7 +92,7 @@ export default function HamburgerMenu({ isOpen, onClose }: HamburgerMenuProps) {
 
         {/* Footer */}
         <div className="px-6 py-5 border-t border-white/10">
-          <p className="text-white/30 text-xs text-center">© 2024 Nutado. All rights reserved.</p>
+          <p className="text-white/30 text-xs text-center">© 2024 Consuetudo. All rights reserved.</p>
         </div>
       </div>
     </>

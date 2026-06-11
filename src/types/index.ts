@@ -1,4 +1,6 @@
 // ─── User & Auth ────────────────────────────────────────────────────
+export type AppRole = "client" | "employee" | "admin";
+
 export interface User {
   id: string;
   name: string;
@@ -9,12 +11,23 @@ export interface User {
   createdAt: string;
 }
 
+export interface AuthProfile {
+  uid: string;
+  email: string;
+  name: string;
+  company: string;
+  phone?: string;
+  role: AppRole;
+  createdAt: string;
+  password?: string;
+}
+
 // ─── Products ───────────────────────────────────────────────────────
 export interface Product {
   id: number;
   name: string;
   brand: string;
-  category: ProductCategory;
+  category: ProductCategory | string;
   price: number;
   originalPrice: number;
   weight: string;
@@ -22,7 +35,12 @@ export interface Product {
   minOrder: number;
   rating: number;
   reviews: number;
-  emoji: string;
+  emoji?: string;
+  imageUrl?: string;
+  length?: number;
+  width?: number;
+  height?: number;
+  volume?: number;
   badge?: string;
   inStock: boolean;
   tags: string[];
@@ -52,6 +70,39 @@ export interface Order {
   deliveryDate: string;
   createdAt: string;
   address: string;
+}
+
+export interface OrderProduct {
+  id: number;
+  name: string;
+  brand?: string;
+  quantity?: number;
+  price?: number;
+}
+
+export interface FollowUp {
+  date: string;
+  remarks: string;
+  callerName: string;
+  createdAt: string;
+}
+
+export interface OrderRecord extends Order {
+  occasionLabel?: string;
+  companyId?: string;
+  customerId?: string;
+  createdByUid?: string;
+  createdByRole?: AppRole;
+  boxType?: "signature" | "custom";
+  signatureBoxId?: number | string;
+  products?: OrderProduct[];
+  industry?: string;
+  message?: string;
+  messageTemplate?: string;
+  logoChoice?: string;
+  ribbonTheme?: string;
+  invoiceUrl?: string;
+  followUps?: FollowUp[];
 }
 
 export type OrderStatus =
@@ -92,6 +143,10 @@ export interface StatCard {
 
 // ─── Onboarding ─────────────────────────────────────────────────────
 export interface OnboardingState {
+  companyName: string;
+  industry: string;
+  contactPerson: string;
+  clientEmail: string;
   occasions: string[];
   categories: string[];
   products: number[];
@@ -102,5 +157,26 @@ export interface OnboardingState {
   primaryColor: string;
   logoUrl?: string;
   boxType?: "signature" | "custom";
-  signatureBoxId?: number;
+  signatureBoxId?: number | string;
+  message?: string;
+  messageTemplate?: string;
+  logoChoice?: string;
+  ribbonTheme?: string;
+  orderReference?: string;
+}
+
+export interface SignatureBoxRecord {
+  id: string;
+  label: string;
+  imageUrl: string;
+  imageUrls?: string[];
+  productIds: number[];
+  optionalProductIds?: number[];
+  createdAt: string;
+  boxType?: "predefined" | "custom";
+  length?: number;
+  width?: number;
+  height?: number;
+  weight?: number;
+  maxPrice?: number;
 }

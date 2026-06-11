@@ -6,7 +6,7 @@ interface StatusBadgeProps {
 }
 
 const LABELS: Record<OrderStatus, string> = {
-  pending: "Pending",
+  pending: "Enquiry",
   processing: "Processing",
   shipped: "Shipped",
   delivered: "Delivered",

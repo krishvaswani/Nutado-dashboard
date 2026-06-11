@@ -1,4 +1,6 @@
 import Link from "next/link";
+import Image from "next/image";
+import logoImage from "@/Assets/consueltudo-logo---.png";
 
 export default function NotFound() {
   return (
@@ -27,10 +29,7 @@ export default function NotFound() {
 
         {/* Logo */}
         <div className="mt-10 flex items-center justify-center gap-2 opacity-40">
-          <div className="w-6 h-6 bg-nutado-green rounded-md flex items-center justify-center">
-            <span className="text-white font-display font-bold text-xs">N</span>
-          </div>
-          <span className="font-display font-semibold text-sm text-nutado-gray-600">Nutado</span>
+          <Image src={logoImage} alt="Consuetudo" height={24} className="object-contain w-auto" />
         </div>
       </div>
     </div>

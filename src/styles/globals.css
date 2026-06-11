@@ -4,9 +4,9 @@
 
 @layer base {
   :root {
-    --brand-green: #0a6e3a;
-    --brand-green-dark: #064d28;
-    --brand-green-light: #0f8c4a;
+    --brand-green: #ec2626;
+    --brand-green-dark: #c81010;
+    --brand-green-light: #ff6b6b;
     --brand-black: #1a1a1a;
   }
 
@@ -16,6 +16,18 @@
 
   body {
     @apply font-figtree text-nutado-gray-900 antialiased;
+  }
+
+  /* Hide scrollbars globally across all browsers while maintaining full scrolling functionality */
+  ::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+
+  * {
+    -ms-overflow-style: none !important; /* IE and Edge */
+    scrollbar-width: none !important; /* Firefox */
   }
 }
 
@@ -40,5 +52,19 @@
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  /* Hardware acceleration for ultra-smooth GPU transitions and hover micro-animations */
+  .hardware-accelerated {
+    will-change: transform, opacity;
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+  }
+
+  /* Defer painting of offscreen elements in heavy grid layouts (highly improves scroll performance & INP) */
+  .defer-render {
+    content-visibility: auto;
+    contain-intrinsic-size: 0 400px;
   }
 }

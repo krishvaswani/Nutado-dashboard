@@ -4,6 +4,10 @@ import React, { createContext, useContext, useState, useCallback } from "react";
 import type { OnboardingState } from "@/types";
 
 const DEFAULT_STATE: OnboardingState = {
+  companyName: "",
+  industry: "",
+  contactPerson: "",
+  clientEmail: "",
   occasions: [],
   categories: [],
   products: [],
@@ -11,8 +15,12 @@ const DEFAULT_STATE: OnboardingState = {
   quantity: 50,
   brandName: "",
   tagline: "",
-  primaryColor: "#0a6e3a",
+  primaryColor: "#ec2626",
   logoUrl: undefined,
+  message: "",
+  messageTemplate: "warm-festive",
+  logoChoice: "Yes - share logo after submission",
+  ribbonTheme: "Gold (Signature)",
 };
 
 interface OnboardingContextValue {

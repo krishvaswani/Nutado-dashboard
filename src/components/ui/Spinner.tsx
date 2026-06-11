@@ -18,7 +18,7 @@ export function LoadingScreen({ message = "Loading..." }: { message?: string }) 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-nutado-gray-50">
       <div className="w-12 h-12 bg-nutado-green rounded-xl flex items-center justify-center shadow-elevated">
-        <span className="text-white font-display font-bold text-xl">N</span>
+        <span className="text-white font-display font-bold text-xl">C</span>
       </div>
       <div className="flex items-center gap-2">
         <Spinner size={18} />

@@ -231,7 +231,7 @@ export const MOCK_PRODUCTS: Product[] = [
   {
     id: 3,
     name: "Assorted Dry Fruits",
-    brand: "Nutado Select",
+    brand: "Consuetudo Select",
     category: "dry-fruits",
     price: 399,
     originalPrice: 499,
@@ -282,7 +282,7 @@ export const MOCK_PRODUCTS: Product[] = [
   {
     id: 6,
     name: "Dates & Figs Box",
-    brand: "Nutado Select",
+    brand: "Consuetudo Select",
     category: "dry-fruits",
     price: 449,
     originalPrice: 599,

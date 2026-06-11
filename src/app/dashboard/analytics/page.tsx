@@ -1,5 +1,6 @@
 import { MOCK_REVENUE, MOCK_ORDERS } from "@/lib/mockData";
 import { TrendingUp, ShoppingBag, Users, Package } from "lucide-react";
+import ProductIcon from "@/components/ui/ProductIcon";
 
 const TOP_OCCASIONS = [
   { name: "Diwali", orders: 412, percent: 32, color: "bg-orange-400" },
@@ -111,7 +112,7 @@ export default function AnalyticsPage() {
           {TOP_PRODUCTS.map((p, i) => (
             <div key={p.name} className="flex items-center gap-4 px-5 py-4">
               <span className="text-xs font-bold text-nutado-gray-400 w-5">#{i + 1}</span>
-              <span className="text-2xl">{p.emoji}</span>
+              <ProductIcon category="sweets" name={p.name} size={18} className="w-10 h-10 shadow-sm border border-nutado-gray-100" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-nutado-gray-900">{p.name}</p>
                 <p className="text-xs text-nutado-gray-400">{p.orders} orders</p>

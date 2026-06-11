@@ -1,5 +1,5 @@
 // ─── App ───────────────────────────────────────────────────────────
-export const APP_NAME    = "Nutado";
+export const APP_NAME    = "Consuetudo";
 export const APP_TAGLINE = "Every Home Deserves Better Snacking";
 export const APP_URL     = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
@@ -50,7 +50,22 @@ export const GST_RATE = 0.18;
 
 // ─── Brand colours ─────────────────────────────────────────────────
 export const BRAND = {
-  green:      "#0a6e3a",
-  greenDark:  "#064d28",
-  greenLight: "#0f8c4a",
+  green:      "#ec2626",
+  greenDark:  "#c81010",
+  greenLight: "#ff6b6b",
 } as const;
+
+// ─── Custom box unlock criteria ────────────────────────────────────
+export const CUSTOM_BOX_CRITERIA_KEY = "nutado_custom_box_criteria";
+
+export interface CustomBoxCriteria {
+  requiredProductsPerUnlock: number;
+  maxUnlockedSlots: number;
+  customBoxMinProducts: number;
+}
+
+export const DEFAULT_CUSTOM_BOX_CRITERIA: CustomBoxCriteria = {
+  requiredProductsPerUnlock: 2,
+  maxUnlockedSlots: 8,
+  customBoxMinProducts: 8,
+};

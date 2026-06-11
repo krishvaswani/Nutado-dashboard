@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config: Config = {
+  darkMode: "class",
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -10,22 +11,22 @@ const config: Config = {
     extend: {
       colors: {
         brand: {
-          50: "#edfcf2",
-          100: "#d3f8e0",
-          200: "#aaf0c6",
-          300: "#73e2a3",
-          400: "#3acd7c",
-          500: "#16b362",
-          600: "#0a914e",
-          700: "#087440",
-          800: "#095c35",
-          900: "#084c2d",
-          950: "#032b18",
+          50: "#fff1f1",
+          100: "#ffe1e1",
+          200: "#ffc7c7",
+          300: "#ffa0a0",
+          400: "#ff6b6b",
+          500: "#ec2626",
+          600: "#c81010",
+          700: "#a00808",
+          800: "#7c0404",
+          900: "#5a0202",
+          950: "#330000",
         },
         nutado: {
-          green: "#0a6e3a",
-          "green-dark": "#064d28",
-          "green-light": "#0f8c4a",
+          green: "#ec2626",
+          "green-dark": "#c81010",
+          "green-light": "#ff6b6b",
           black: "#1a1a1a",
           white: "#ffffff",
           gray: {
@@ -49,9 +50,9 @@ const config: Config = {
       },
       backgroundImage: {
         "brand-gradient":
-          "linear-gradient(135deg, #032b18 0%, #0a6e3a 50%, #064d28 100%)",
+          "linear-gradient(135deg, #330000 0%, #ec2626 50%, #7c0404 100%)",
         "brand-gradient-light":
-          "linear-gradient(135deg, #0f8c4a 0%, #0a6e3a 100%)",
+          "linear-gradient(135deg, #ff6b6b 0%, #ec2626 100%)",
       },
       boxShadow: {
         card: "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)",

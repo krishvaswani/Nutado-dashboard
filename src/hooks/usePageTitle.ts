@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { APP_NAME } from "@/lib/constants";
 
 const ROUTE_TITLES: Record<string, string> = {
   "/dashboard":            "Dashboard",
@@ -9,6 +10,8 @@ const ROUTE_TITLES: Record<string, string> = {
   "/dashboard/customers":  "Customers",
   "/dashboard/analytics":  "Analytics",
   "/dashboard/settings":   "Settings",
+  "/user-dashboard":       "Dashboard",
+  "/user-dashboard/orders":"My Orders",
 };
 
 export function usePageTitle(): string {
@@ -25,5 +28,5 @@ export function usePageTitle(): string {
     if (parentTitle) return parentTitle;
   }
 
-  return "Nutado";
+  return APP_NAME;
 }

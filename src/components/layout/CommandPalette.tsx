@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Search, ShoppingBag, Package, Users, BarChart2, Settings, ArrowRight, X } from "lucide-react";
+import { Search, ShoppingBag, Package, Users, BarChart2, Settings, ArrowRight, X, Home, Tag, PlusCircle, User } from "lucide-react";
 import { MOCK_ORDERS, MOCK_PRODUCTS, MOCK_CUSTOMERS } from "@/lib/mockData";
+import { subscribeProducts } from "@/lib/firebase/firestore";
 
 interface SearchResult {
   id: string;
@@ -33,7 +34,36 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState(0);
+  const getResultIcon = (type: string, id: string) => {
+    switch (type) {
+      case "page":
+        if (id === "p1") return <Home size={15} className="text-nutado-gray-500" />;
+        if (id === "p2") return <Package size={15} className="text-nutado-gray-500" />;
+        if (id === "p3") return <Tag size={15} className="text-nutado-gray-500" />;
+        if (id === "p4") return <Users size={15} className="text-nutado-gray-500" />;
+        if (id === "p5") return <BarChart2 size={15} className="text-nutado-gray-500" />;
+        if (id === "p6") return <Settings size={15} className="text-nutado-gray-500" />;
+        if (id === "p7") return <PlusCircle size={15} className="text-[#ec2626]" />;
+        return <ArrowRight size={15} className="text-nutado-gray-500" />;
+      case "order":
+        return <Package size={15} className="text-blue-500" />;
+      case "product":
+        return <Tag size={15} className="text-emerald-500" />;
+      case "customer":
+        return <User size={15} className="text-purple-500" />;
+      default:
+        return <ArrowRight size={15} className="text-nutado-gray-500" />;
+    }
+  };
   const inputRef = useRef<HTMLInputElement>(null);
+  const [productsList, setProductsList] = useState<any[]>(MOCK_PRODUCTS);
+
+  useEffect(() => {
+    const unsub = subscribeProducts((data) => {
+      setProductsList(data);
+    });
+    return () => unsub();
+  }, []);
 
   useEffect(() => {
     if (isOpen) {
@@ -63,16 +93,17 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
         href: `/dashboard/orders/${o.id}`,
         emoji: "📦",
       })),
-      ...MOCK_PRODUCTS.filter((p) =>
-        p.name.toLowerCase().includes(query.toLowerCase()) ||
-        p.brand.toLowerCase().includes(query.toLowerCase())
-      ).slice(0, 3).map((p) => ({
+      ...productsList.filter((p) => {
+        const nameMatch = p.name ? p.name.toLowerCase().includes(query.toLowerCase()) : false;
+        const brandMatch = p.brand ? p.brand.toLowerCase().includes(query.toLowerCase()) : false;
+        return nameMatch || brandMatch;
+      }).slice(0, 3).map((p) => ({
         id: String(p.id),
         type: "product" as const,
         label: p.name,
         sub: `${p.brand} · ₹${p.price}`,
         href: `/dashboard/products/${p.id}`,
-        emoji: p.emoji,
+        emoji: p.emoji || "📦",
       })),
       ...MOCK_CUSTOMERS.filter(
         (c) =>
@@ -160,7 +191,9 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
                   selected === i ? "bg-brand-50" : "hover:bg-nutado-gray-50"
                 }`}
               >
-                <span className="text-lg w-6 text-center flex-shrink-0">{r.emoji}</span>
+                <span className="w-6 flex items-center justify-center flex-shrink-0">
+                  {getResultIcon(r.type, r.id)}
+                </span>
                 <div className="flex-1 min-w-0">
                   <p className={`text-sm font-medium truncate ${selected === i ? "text-nutado-green" : "text-nutado-gray-900"}`}>
                     {r.label}

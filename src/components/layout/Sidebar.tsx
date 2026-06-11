@@ -1,7 +1,10 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
+import SelectCustomerModal from "@/components/dashboard/SelectCustomerModal";
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -11,10 +14,16 @@ import {
   Settings,
   PlusCircle,
   X,
+  LogOut,
+  Inbox,
 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { useOrders } from "@/hooks/useOrders";
+import logoImage from "@/Assets/consueltudo-logo---.png";
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/dashboard/enquiries", label: "Enquiries", icon: Inbox },
   { href: "/dashboard/orders", label: "Orders", icon: ShoppingBag },
   { href: "/dashboard/products", label: "Products", icon: Package },
   { href: "/dashboard/customers", label: "Customers", icon: Users },
@@ -29,6 +38,12 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
+  const { profile, signOut } = useAuth();
+  const { orders } = useOrders();
+
+  const enquiriesCount = (orders || []).filter((o) => o.status === "pending").length;
+  const ordersCount = (orders || []).filter((o) => o.status !== "pending").length;
+  const [selectCustomerOpen, setSelectCustomerOpen] = useState(false);
 
   return (
     <>
@@ -50,13 +65,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
       >
         {/* Logo */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-nutado-gray-100">
-          <Link href="/dashboard" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-nutado-green rounded-lg flex items-center justify-center shadow-sm">
-              <span className="text-white font-display font-bold text-sm">N</span>
-            </div>
-            <span className="font-display font-bold text-lg text-nutado-gray-900 tracking-tight">
-              Nutado
-            </span>
+          <Link href="/dashboard" className="flex items-center">
+            <Image src={logoImage} alt="Consuetudo" height={45} className="object-contain w-auto" />
           </Link>
           <button
             onClick={onClose}
@@ -68,14 +78,16 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         {/* New Order CTA */}
         <div className="px-4 py-3 border-b border-nutado-gray-100">
-          <Link
-            href="/onboarding/step1"
-            className="flex items-center justify-center gap-2 w-full py-2.5 bg-nutado-green text-white text-sm font-semibold rounded-lg hover:bg-nutado-green-dark transition-colors"
-            onClick={onClose}
+          <button
+            onClick={() => {
+              onClose();
+              setSelectCustomerOpen(true);
+            }}
+            className="flex items-center justify-center gap-2 w-full py-2.5 bg-nutado-green text-white text-sm font-semibold rounded-lg hover:bg-nutado-green-dark transition-colors cursor-pointer"
           >
             <PlusCircle size={16} />
             New Order
-          </Link>
+          </button>
         </div>
 
         {/* Nav links */}
@@ -101,9 +113,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                   className={isActive ? "text-nutado-green" : "text-nutado-gray-400"}
                 />
                 {label}
-                {label === "Orders" && (
+                {label === "Enquiries" && enquiriesCount > 0 && (
+                  <span className="ml-auto text-[10px] font-bold bg-amber-500 text-white px-1.5 py-0.5 rounded-full animate-pulse">
+                    {enquiriesCount}
+                  </span>
+                )}
+                {label === "Orders" && ordersCount > 0 && (
                   <span className="ml-auto text-[10px] font-bold bg-nutado-green text-white px-1.5 py-0.5 rounded-full">
-                    8
+                    {ordersCount}
                   </span>
                 )}
               </Link>
@@ -113,21 +130,33 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         {/* User profile at bottom */}
         <div className="px-4 py-4 border-t border-nutado-gray-100">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 mb-3">
             <div className="w-8 h-8 rounded-full bg-nutado-green text-white flex items-center justify-center text-sm font-bold flex-shrink-0">
-              JD
+              {profile?.name?.charAt(0).toUpperCase() ?? "N"}
             </div>
             <div className="min-w-0">
               <p className="text-sm font-semibold text-nutado-gray-900 truncate">
-                John Doe
+                {profile?.name ?? "Nutado Team"}
               </p>
               <p className="text-xs text-nutado-gray-400 truncate">
-                john@acme.com
+                {profile?.email ?? "ops@nutado.com"}
               </p>
             </div>
           </div>
+          <button
+            type="button"
+            onClick={() => signOut()}
+            className="w-full flex items-center justify-center gap-2 py-2 text-sm font-semibold text-nutado-gray-600 bg-nutado-gray-50 rounded-lg hover:bg-nutado-gray-100 transition-colors"
+          >
+            <LogOut size={15} />
+            Sign Out
+          </button>
         </div>
       </aside>
+      <SelectCustomerModal
+        isOpen={selectCustomerOpen}
+        onClose={() => setSelectCustomerOpen(false)}
+      />
     </>
   );
 }

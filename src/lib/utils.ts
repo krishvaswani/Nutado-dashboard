@@ -1,24 +1,22 @@
 import type { OrderStatus } from "@/types";
 
-export function formatCurrency(amount: number): string {
-  if (amount >= 100000) {
-    return `₹${(amount / 100000).toFixed(1)}L`;
-  }
-  if (amount >= 1000) {
-    return `₹${(amount / 1000).toFixed(1)}K`;
-  }
-  return `₹${amount.toLocaleString("en-IN")}`;
+export function formatCurrency(amount?: number | null): string {
+  const num = Number(amount) || 0;
+  return `₹${num.toLocaleString("en-IN")}`;
 }
 
-export function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString("en-IN", {
+export function formatDate(dateStr?: string | null): string {
+  if (!dateStr) return "—";
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return "—";
+  return d.toLocaleDateString("en-IN", {
     day: "numeric",
     month: "short",
     year: "numeric",
   });
 }
 
-export function getStatusColor(status: OrderStatus): {
+export function getStatusColor(status?: OrderStatus | null): {
   bg: string;
   text: string;
   dot: string;
@@ -50,7 +48,8 @@ export function getStatusColor(status: OrderStatus): {
       dot: "bg-red-400",
     },
   };
-  return map[status];
+  const key = status || "pending";
+  return map[key] || map.pending;
 }
 
 export function clsx(...classes: (string | boolean | undefined | null)[]): string {

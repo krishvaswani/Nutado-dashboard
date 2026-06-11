@@ -1,18 +1,91 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { Search, Mail, Phone, UserPlus } from "lucide-react";
+import { Search, Mail, Phone, UserPlus, Loader2 } from "lucide-react";
 import { MOCK_CUSTOMERS } from "@/lib/mockData";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import AddCustomerModal from "@/components/dashboard/AddCustomerModal";
+import { getAllUsers, subscribeOrders } from "@/lib/firebase/firestore";
+import { useToast } from "@/hooks/useToast";
+import ToastContainer from "@/components/ui/Toast";
 
 export default function CustomersPage() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "active" | "inactive">("all");
   const [showAddModal, setShowAddModal] = useState(false);
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { toasts, addToast, removeToast } = useToast();
 
-  const filtered = MOCK_CUSTOMERS.filter((c) => {
+  useEffect(() => {
+    let unsubOrders = () => {};
+    
+    async function loadData() {
+      try {
+        const users = await getAllUsers();
+        const clients = users.filter((u) => u.role === "client");
+        
+        const realCustomersMapped = clients.map((u) => {
+          const names = u.name.split(" ");
+          const avatar = names.map(n => n[0]).join("").substring(0, 2).toUpperCase() || "C";
+          
+          return {
+            id: u.uid,
+            name: u.name,
+            email: u.email,
+            company: u.company || "Individual",
+            phone: u.phone || "Not provided",
+            avatar: avatar,
+            status: (u as any).status || "active",
+            totalOrders: 0,
+            totalSpend: 0,
+            lastOrder: u.createdAt || new Date().toISOString(),
+            isReal: true,
+          };
+        });
+
+        unsubOrders = subscribeOrders((orders) => {
+          const updated = realCustomersMapped.map((c) => {
+            const clientOrders = orders.filter(
+              (o) => o.customerId === c.id || o.createdByUid === c.id
+            );
+            
+            const totalOrders = clientOrders.length;
+            const totalSpend = clientOrders
+              .filter((o) => o.status !== "cancelled")
+              .reduce((sum, o) => sum + (o.total || 0), 0);
+            
+            const lastOrderDate = clientOrders.length > 0 
+              ? clientOrders[0].createdAt 
+              : c.lastOrder;
+
+            return {
+              ...c,
+              totalOrders,
+              totalSpend,
+              lastOrder: lastOrderDate,
+            };
+          });
+
+          setCustomers(updated);
+          setLoading(false);
+        });
+      } catch (err) {
+        console.error("Failed to load real customer profiles:", err);
+        setCustomers([]);
+        setLoading(false);
+      }
+    }
+
+    loadData();
+    
+    return () => {
+      unsubOrders();
+    };
+  }, []);
+
+  const filtered = customers.filter((c) => {
     const matchSearch =
       c.name.toLowerCase().includes(search.toLowerCase()) ||
       c.company.toLowerCase().includes(search.toLowerCase()) ||
@@ -21,13 +94,22 @@ export default function CustomersPage() {
     return matchSearch && matchFilter;
   });
 
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-2">
+        <Loader2 className="animate-spin text-nutado-green" size={32} />
+        <p className="text-sm text-nutado-gray-500">Loading customers database...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5 animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="font-display font-bold text-2xl text-nutado-gray-900">Customers</h1>
-          <p className="text-sm text-nutado-gray-500 mt-0.5">{MOCK_CUSTOMERS.length} total customers</p>
+          <p className="text-sm text-nutado-gray-500 mt-0.5">{customers.length} total customers</p>
         </div>
         <button onClick={() => setShowAddModal(true)} className="btn-primary flex items-center gap-2 text-sm py-2.5">
           <UserPlus size={15} /> Add Customer
@@ -37,9 +119,9 @@ export default function CustomersPage() {
       {/* Summary cards */}
       <div className="grid grid-cols-3 gap-4">
         {[
-          { label: "Total Customers", value: MOCK_CUSTOMERS.length.toString(), color: "text-nutado-gray-900" },
-          { label: "Active", value: MOCK_CUSTOMERS.filter((c) => c.status === "active").length.toString(), color: "text-green-600" },
-          { label: "Inactive", value: MOCK_CUSTOMERS.filter((c) => c.status === "inactive").length.toString(), color: "text-red-500" },
+          { label: "Total Customers", value: customers.length.toString(), color: "text-nutado-gray-900" },
+          { label: "Active", value: customers.filter((c) => c.status === "active").length.toString(), color: "text-green-600" },
+          { label: "Inactive", value: customers.filter((c) => c.status === "inactive").length.toString(), color: "text-red-500" },
         ].map((stat) => (
           <div key={stat.label} className="bg-white rounded-xl border border-nutado-gray-200 shadow-card p-4 text-center">
             <p className={`text-2xl font-display font-bold ${stat.color}`}>{stat.value}</p>
@@ -134,8 +216,10 @@ export default function CustomersPage() {
       <AddCustomerModal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
-        onAdd={(c) => console.log("New customer:", c)}
+        onAdd={(newCust) => setCustomers((prev) => [newCust, ...prev])}
+        addToast={addToast}
       />
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </div>
   );
 }

@@ -1,22 +1,156 @@
 "use client";
 
-import { useParams } from "next/navigation";
+export const dynamic = "force-dynamic";
+
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import { useState, useEffect } from "react";
 import {
   ChevronLeft, Mail, Phone, MapPin, Building,
-  ShoppingBag, TrendingUp, Calendar, Package,
+  ShoppingBag, TrendingUp, Calendar, Package, Loader2, Trash2
 } from "lucide-react";
 import { MOCK_CUSTOMERS, MOCK_ORDERS } from "@/lib/mockData";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import StatusBadge from "@/components/ui/StatusBadge";
 import Badge from "@/components/ui/Badge";
+import { getUserProfile, subscribeOrders, deleteUserProfile, upsertUserProfile } from "@/lib/firebase/firestore";
 
 export default function CustomerDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const customer = MOCK_CUSTOMERS.find((c) => c.id === id) ?? MOCK_CUSTOMERS[0];
+  const router = useRouter();
+  const [customer, setCustomer] = useState<any>(null);
+  const [customerOrders, setCustomerOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
+  const [password, setPassword] = useState("password123");
+  const [updatingPassword, setUpdatingPassword] = useState(false);
 
-  // Filter orders for this customer (simulate by matching first 2 chars)
-  const customerOrders = MOCK_ORDERS.slice(0, customer.totalOrders);
+  const handleDeleteClick = async () => {
+    const confirmed = window.confirm(
+      `Are you absolutely sure you want to delete the profile of ${customer.name}? This action is permanent and cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    setDeleting(true);
+    try {
+      await deleteUserProfile(id);
+      alert("Customer profile deleted successfully.");
+      router.push("/dashboard/customers");
+    } catch (err) {
+      console.error("Failed to delete customer profile:", err);
+      alert("An error occurred while deleting this customer profile.");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  const handleSavePassword = async () => {
+    setUpdatingPassword(true);
+    try {
+      const profile = await getUserProfile(id);
+      if (profile) {
+        await upsertUserProfile({
+          ...profile,
+          password: password.trim(),
+        });
+        alert("Password updated successfully.");
+      } else {
+        alert("Customer profile not found in database.");
+      }
+    } catch (err) {
+      console.error("Failed to update password:", err);
+      alert("An error occurred while saving the password.");
+    } finally {
+      setUpdatingPassword(false);
+    }
+  };
+
+  useEffect(() => {
+    let unsubOrders = () => {};
+
+    async function loadCustomer() {
+      // 1. Check if mock customer first
+      const mock = MOCK_CUSTOMERS.find((c) => c.id === id);
+      if (mock) {
+        setCustomer(mock);
+        setCustomerOrders(MOCK_ORDERS.slice(0, mock.totalOrders));
+        setLoading(false);
+        return;
+      }
+
+      // 2. Fetch real customer from Firestore
+      try {
+        const profile = await getUserProfile(id);
+        if (profile) {
+          setPassword((profile as any).password || "password123");
+          const names = profile.name.split(" ");
+          const avatar = names.map(n => n[0]).join("").substring(0, 2).toUpperCase() || "C";
+
+          const baseCustomer = {
+            id: profile.uid,
+            name: profile.name,
+            email: profile.email,
+            company: profile.company || "Individual",
+            phone: profile.phone || "Not provided",
+            avatar,
+            status: (profile as any).status || "active",
+            totalOrders: 0,
+            totalSpend: 0,
+            lastOrder: profile.createdAt || new Date().toISOString(),
+          };
+
+          unsubOrders = subscribeOrders((orders) => {
+            const clientOrders = orders.filter(
+              (o) => o.customerId === id || o.createdByUid === id
+            );
+
+            const totalOrders = clientOrders.length;
+            const totalSpend = clientOrders
+              .filter((o) => o.status !== "cancelled")
+              .reduce((sum, o) => sum + (o.total || 0), 0);
+
+            const lastOrderDate = clientOrders.length > 0 
+              ? clientOrders[0].createdAt 
+              : baseCustomer.lastOrder;
+
+            setCustomer({
+              ...baseCustomer,
+              totalOrders,
+              totalSpend,
+              lastOrder: lastOrderDate,
+            });
+            setCustomerOrders(clientOrders);
+            setLoading(false);
+          });
+        } else {
+          setCustomer(MOCK_CUSTOMERS[0]);
+          setCustomerOrders(MOCK_ORDERS.slice(0, MOCK_CUSTOMERS[0].totalOrders));
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error("Failed to load real customer:", err);
+        setCustomer(MOCK_CUSTOMERS[0]);
+        setCustomerOrders(MOCK_ORDERS.slice(0, MOCK_CUSTOMERS[0].totalOrders));
+        setLoading(false);
+      }
+    }
+
+    loadCustomer();
+
+    return () => {
+      unsubOrders();
+    };
+  }, [id]);
+
+  if (loading || !customer) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-2">
+        <Loader2 className="animate-spin text-nutado-green" size={32} />
+        <p className="text-sm text-nutado-gray-500">Loading customer profile...</p>
+      </div>
+    );
+  }
+
   const avgOrder = customer.totalOrders
     ? Math.round(customer.totalSpend / customer.totalOrders)
     : 0;
@@ -55,8 +189,23 @@ export default function CustomerDetailPage() {
             >
               <Mail size={14} /> Email
             </Link>
-            <button className="btn-primary flex items-center gap-2 text-sm py-2">
+            <Link 
+              href={`/onboarding/step1?customerId=${id}`}
+              className="btn-primary flex items-center gap-2 text-sm py-2"
+            >
               <Package size={14} /> New Order
+            </Link>
+            <button
+              onClick={handleDeleteClick}
+              disabled={deleting}
+              className="flex items-center gap-2 text-sm py-2 px-3 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-lg font-semibold transition-all disabled:opacity-50"
+            >
+              {deleting ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Trash2 size={14} />
+              )}
+              Delete Profile
             </button>
           </div>
         </div>
@@ -91,6 +240,39 @@ export default function CustomerDetailPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* Account Security (Admin/Staff only) */}
+          <div className="bg-white rounded-xl border border-nutado-gray-200 shadow-card p-5 animate-fade-in">
+            <h2 className="font-display font-semibold text-nutado-gray-900 mb-4">
+              Account Security
+            </h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-nutado-gray-400 uppercase tracking-wide mb-1.5">
+                  Client Password
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter password..."
+                    className="flex-1 text-sm px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#ec2626] focus:border-transparent transition-all"
+                  />
+                  <button
+                    onClick={handleSavePassword}
+                    disabled={updatingPassword}
+                    className="px-4 py-2 text-xs font-semibold text-white bg-[#ec2626] hover:bg-[#7c0404] rounded-xl transition-all shadow-sm active:scale-98 disabled:opacity-50 disabled:pointer-events-none"
+                  >
+                    {updatingPassword ? "Saving..." : "Save"}
+                  </button>
+                </div>
+                <p className="text-[11px] text-nutado-gray-400 mt-2">
+                  Clients created via draft orders use this password to sign in.
+                </p>
+              </div>
             </div>
           </div>
 
