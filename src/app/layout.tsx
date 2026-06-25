@@ -16,6 +16,8 @@ export const metadata: Metadata = {
     "Premium snack gifting and subscription platform. Curate the perfect snack boxes for every occasion.",
   icons: {
     icon: "/icon.png",
+    shortcut: "/favicon.ico",
+    apple: "/icon.png",
   },
 };
 

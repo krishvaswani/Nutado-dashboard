@@ -648,12 +648,13 @@ export default function OnboardingStep3() {
               onClick={() => update({ boxType: "signature", products: [] })}
               className={`rounded-2xl px-6 py-5 text-center transition-all duration-200 border-2 ${
                 !isCustom
-                  ? "bg-white border-white text-gray-900 shadow-sm"
+                  ? "text-white shadow-sm"
                   : "bg-white border-gray-200 text-gray-900 hover:border-gray-300"
               }`}
+              style={!isCustom ? { backgroundColor: state.primaryColor, borderColor: state.primaryColor } : {}}
             >
               <div className="font-bold text-base mb-1">Consuetudo Signature</div>
-              <p className="text-xs leading-relaxed text-gray-500">
+              <p className={`text-xs leading-relaxed ${!isCustom ? "text-white/85" : "text-gray-500"}`}>
                 Let our experts do the magic. Meticulously curated, perfectly balanced collections.
               </p>
             </button>
@@ -662,9 +663,10 @@ export default function OnboardingStep3() {
               onClick={() => update({ boxType: "custom" })}
               className={`rounded-2xl px-6 py-5 text-center transition-all duration-200 border-2 ${
                 isCustom
-                  ? "bg-[#0a4f2a] border-[#0a4f2a] text-white shadow-sm"
+                  ? "text-white shadow-sm"
                   : "bg-white border-gray-200 text-gray-900 hover:border-gray-300"
               }`}
+              style={isCustom ? { backgroundColor: state.primaryColor, borderColor: state.primaryColor } : {}}
             >
               <div className="font-bold text-base mb-1">Build Your Own</div>
               <p className={`text-xs leading-relaxed ${isCustom ? "text-white/85" : "text-gray-500"}`}>

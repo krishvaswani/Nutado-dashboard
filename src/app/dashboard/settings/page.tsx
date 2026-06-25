@@ -70,6 +70,12 @@ export default function SettingsPage() {
   const [editingOccasionId, setEditingOccasionId] = useState<string | null>(null);
   const [newOccasionImg, setNewOccasionImg] = useState("");
   const [uploadingImg, setUploadingImg] = useState(false);
+  const [newOccasionFestivalDate, setNewOccasionFestivalDate] = useState("");
+  const [newOccasionBannerEnabled, setNewOccasionBannerEnabled] = useState(false);
+  const [newOccasionBannerMessage, setNewOccasionBannerMessage] = useState("");
+  const [newOccasionPreOrderDays, setNewOccasionPreOrderDays] = useState(7);
+  const [newOccasionBannerImg, setNewOccasionBannerImg] = useState("");
+  const [uploadingBannerImg, setUploadingBannerImg] = useState(false);
 
   useEffect(() => {
     if (activeTab === "employees") {
@@ -178,6 +184,11 @@ export default function SettingsPage() {
           color: newOccasionColor,
           icon: newOccasionIcon,
           img: newOccasionImg || undefined,
+          festivalDate: newOccasionFestivalDate || undefined,
+          bannerEnabled: newOccasionBannerEnabled,
+          bannerMessage: newOccasionBannerMessage || undefined,
+          preOrderDays: newOccasionPreOrderDays,
+          bannerImg: newOccasionBannerImg || undefined,
         });
         setSuccessMessage("Occasion updated successfully!");
         setEditingOccasionId(null);
@@ -188,11 +199,21 @@ export default function SettingsPage() {
           color: newOccasionColor,
           icon: newOccasionIcon,
           img: newOccasionImg || undefined,
+          festivalDate: newOccasionFestivalDate || undefined,
+          bannerEnabled: newOccasionBannerEnabled,
+          bannerMessage: newOccasionBannerMessage || undefined,
+          preOrderDays: newOccasionPreOrderDays,
+          bannerImg: newOccasionBannerImg || undefined,
         });
         setSuccessMessage("Custom occasion created successfully!");
       }
       setNewOccasionLabel("");
       setNewOccasionImg("");
+      setNewOccasionFestivalDate("");
+      setNewOccasionBannerEnabled(false);
+      setNewOccasionBannerMessage("");
+      setNewOccasionPreOrderDays(7);
+      setNewOccasionBannerImg("");
       setShowAddOccasionForm(false);
       setTimeout(() => setSuccessMessage(""), 3000);
     } catch (err) {
@@ -802,6 +823,107 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
+                  <div className="border-t border-nutado-gray-100 pt-4 mt-4 space-y-4">
+                    <h4 className="text-xs font-bold text-nutado-gray-700 uppercase tracking-wider">Festival & Banner Popup Configuration (Optional)</h4>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-medium text-nutado-gray-600 mb-1">Festival Date</label>
+                        <input 
+                          type="date" 
+                          value={newOccasionFestivalDate} 
+                          onChange={(e) => setNewOccasionFestivalDate(e.target.value)} 
+                          className="input-field py-2 text-xs bg-white" 
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-xs font-medium text-nutado-gray-600 mb-1">Pre-order Deadline (Days Buffer)</label>
+                        <input 
+                          type="number" 
+                          value={newOccasionPreOrderDays} 
+                          onChange={(e) => setNewOccasionPreOrderDays(Number(e.target.value))} 
+                          className="input-field py-2 text-xs bg-white" 
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="flex items-center gap-2 text-xs font-medium text-nutado-gray-700 cursor-pointer select-none">
+                        <input 
+                          type="checkbox" 
+                          checked={newOccasionBannerEnabled} 
+                          onChange={(e) => setNewOccasionBannerEnabled(e.target.checked)} 
+                          className="rounded border-nutado-gray-300 text-nutado-green focus:ring-nutado-green cursor-pointer" 
+                        />
+                        Enable Reminder Popup Banner
+                      </label>
+                    </div>
+
+                    {newOccasionBannerEnabled && (
+                      <>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-medium text-nutado-gray-600 mb-1">Banner Reminder Message</label>
+                            <textarea 
+                              value={newOccasionBannerMessage} 
+                              onChange={(e) => setNewOccasionBannerMessage(e.target.value)} 
+                              placeholder="e.g. Diwali is coming on Nov 8! Order your customized box today to receive it in time."
+                              rows={2.5} 
+                              className="input-field py-2 text-xs resize-none bg-white font-medium" 
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-medium text-nutado-gray-600 mb-1">Banner Image (Optional)</label>
+                            <div className="flex items-center gap-2 mt-1">
+                              {newOccasionBannerImg ? (
+                                <div className="relative w-12 h-12 rounded-xl border border-nutado-gray-250 overflow-hidden shrink-0 bg-white flex items-center justify-center shadow-inner">
+                                  <img src={newOccasionBannerImg} alt="Banner Preview" className="w-full h-full object-contain p-1" />
+                                  <button
+                                    type="button"
+                                    onClick={() => setNewOccasionBannerImg("")}
+                                    className="absolute top-0 right-0 bg-red-500 text-white p-0.5 rounded-bl hover:bg-red-650 transition-colors shadow-sm animate-fade-in"
+                                    title="Remove Banner Image"
+                                  >
+                                    <X size={8} className="stroke-[3]" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="w-12 h-12 rounded-xl border-2 border-dashed border-nutado-gray-250 bg-nutado-gray-50 flex items-center justify-center text-nutado-gray-400 shrink-0">
+                                  <ImageOff size={16} />
+                                </div>
+                              )}
+                              <label className="flex-1">
+                                <div className="px-2.5 py-3.5 bg-white border border-nutado-gray-250 rounded-xl text-[10px] font-bold tracking-wide uppercase text-nutado-gray-700 hover:border-nutado-gray-350 transition-colors cursor-pointer text-center shadow-sm select-none">
+                                  {uploadingBannerImg ? "Uploading..." : newOccasionBannerImg ? "Change Banner" : "Upload Banner"}
+                                </div>
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (!file) return;
+                                    setUploadingBannerImg(true);
+                                    try {
+                                      const url = await uploadImageFile(file);
+                                      setNewOccasionBannerImg(url);
+                                    } catch (err) {
+                                      console.error("Banner image upload failed:", err);
+                                    } finally {
+                                      setUploadingBannerImg(false);
+                                    }
+                                  }}
+                                  className="hidden"
+                                  disabled={uploadingBannerImg}
+                                />
+                              </label>
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-nutado-gray-600 mb-2">Select Visual Icon *</label>
                     <div className="grid grid-cols-5 sm:grid-cols-9 gap-2">
@@ -844,6 +966,11 @@ export default function SettingsPage() {
                         setEditingOccasionId(null);
                         setNewOccasionLabel("");
                         setNewOccasionImg("");
+                        setNewOccasionFestivalDate("");
+                        setNewOccasionBannerEnabled(false);
+                        setNewOccasionBannerMessage("");
+                        setNewOccasionPreOrderDays(7);
+                        setNewOccasionBannerImg("");
                       }}
                       className="px-3.5 py-2 border border-nutado-gray-200 text-nutado-gray-600 rounded-lg hover:bg-nutado-gray-100 transition-colors"
                     >
@@ -869,20 +996,21 @@ export default function SettingsPage() {
                         <th className="px-5 py-3">Occasion Detail</th>
                         <th className="px-5 py-3">Onboarding Category</th>
                         <th className="px-5 py-3">Theme & Icon</th>
+                        <th className="px-5 py-3">Festival & Banner Popup</th>
                         <th className="px-5 py-3 text-right">Action</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-nutado-gray-200 text-sm">
                       {loadingOccasions && occasionsList.length === 0 ? (
                         <tr>
-                          <td colSpan={4} className="px-5 py-10 text-center text-nutado-gray-400">
+                          <td colSpan={5} className="px-5 py-10 text-center text-nutado-gray-400">
                             <RefreshCw size={24} className="animate-spin mx-auto mb-2 text-nutado-green" />
                             Loading occasions directory...
                           </td>
                         </tr>
                       ) : occasionsList.length === 0 ? (
                         <tr>
-                          <td colSpan={4} className="px-5 py-10 text-center text-nutado-gray-400 text-xs">
+                          <td colSpan={5} className="px-5 py-10 text-center text-nutado-gray-400 text-xs">
                             No occasions found. Click &quot;Add Occasion&quot; above to create one!
                           </td>
                         </tr>
@@ -941,6 +1069,30 @@ export default function SettingsPage() {
                                   </span>
                                 </span>
                               </td>
+                              <td className="px-5 py-4">
+                                {occ.festivalDate ? (
+                                  <div className="space-y-1 text-xs">
+                                    <div className="flex items-center gap-1.5 font-semibold text-nutado-gray-800">
+                                      <Calendar size={12} className="text-nutado-gray-400" />
+                                      <span>{new Date(occ.festivalDate).toLocaleDateString('en-IN', { dateStyle: 'medium' })}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                      <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
+                                        occ.bannerEnabled
+                                          ? "bg-emerald-50 text-emerald-700 border border-emerald-150"
+                                          : "bg-gray-100 text-gray-500"
+                                      }`}>
+                                        {occ.bannerEnabled ? "Banner Active" : "Banner Disabled"}
+                                      </span>
+                                      {occ.bannerEnabled && (
+                                        <span className="text-[10px] text-nutado-gray-400 font-medium">({occ.preOrderDays || 7}d buffer)</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <span className="text-xs text-nutado-gray-400 font-medium">—</span>
+                                )}
+                              </td>
                               <td className="px-5 py-4 text-right space-x-1">
                                 <button
                                   type="button"
@@ -951,6 +1103,11 @@ export default function SettingsPage() {
                                     setNewOccasionColor(occ.color);
                                     setNewOccasionIcon(occ.icon);
                                     setNewOccasionImg(occ.img || "");
+                                    setNewOccasionFestivalDate(occ.festivalDate || "");
+                                    setNewOccasionBannerEnabled(occ.bannerEnabled || false);
+                                    setNewOccasionBannerMessage(occ.bannerMessage || "");
+                                    setNewOccasionPreOrderDays(occ.preOrderDays || 7);
+                                    setNewOccasionBannerImg(occ.bannerImg || "");
                                     setShowAddOccasionForm(true);
                                   }}
                                   className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 p-2 rounded-lg transition-colors inline-flex items-center justify-center"

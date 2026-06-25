@@ -3,6 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   ArrowRight,
   Heart,
@@ -18,7 +19,7 @@ import {
 import OnboardingStepper from "@/components/onboarding/OnboardingStepper";
 import { useOnboarding } from "@/context/OnboardingContext";
 import { useAuth } from "@/context/AuthContext";
-import { subscribeOccasions } from "@/lib/firebase/firestore";
+import { subscribeOccasions, createOccasion } from "@/lib/firebase/firestore";
 import OnboardingDraftStatus from "@/components/onboarding/OnboardingDraftStatus";
 
 const ICON_MAP: Record<string, any> = {
@@ -72,9 +73,50 @@ const CATEGORIES = [
 export default function OnboardingStep2() {
   const { state, update } = useOnboarding();
   const { profile } = useAuth();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("all");
   const [customOccasionText, setCustomOccasionText] = useState("");
   const [occasionsList, setOccasionsList] = useState<any[]>([]);
+  
+  // Festival popup states
+  const [upcomingFestivals, setUpcomingFestivals] = useState<any[]>([]);
+  const [showFestivalPopup, setShowFestivalPopup] = useState(false);
+  const [isAdding, setIsAdding] = useState<Record<string, boolean>>({});
+  const [activeFestivalIndex, setActiveFestivalIndex] = useState(0);
+
+  const handleNextFestival = () => {
+    if (activeFestivalIndex < upcomingFestivals.length - 1) {
+      setActiveFestivalIndex(prev => prev + 1);
+    } else {
+      setShowFestivalPopup(false);
+    }
+  };
+
+  const handleOrderNow = async (festival: any) => {
+    setIsAdding(prev => ({ ...prev, [festival.id]: true }));
+    try {
+      const occId = festival.name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+      const bannerMessage = `${festival.name} is coming up on ${new Date(festival.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}! Order your customized box today to receive it in time.`;
+      
+      await createOccasion({
+        label: festival.name,
+        category: "festivals",
+        color: "amber",
+        icon: "Sparkles",
+        festivalDate: festival.date,
+        bannerEnabled: true,
+        bannerMessage: bannerMessage,
+        preOrderDays: 7
+      });
+      
+      update({ occasions: [occId] });
+      router.push("/onboarding/step3");
+    } catch (err) {
+      console.error("Failed to select occasion and redirect", err);
+    } finally {
+      setIsAdding(prev => ({ ...prev, [festival.id]: false }));
+    }
+  };
 
   const selected = state.occasions[0] ?? "";
 
@@ -91,12 +133,100 @@ export default function OnboardingStep2() {
           category: item.category || "gifting",
           color: colorClasses,
           img: SVG_MAP[item.id] || item.img || null,
+          bannerImg: item.bannerImg || null,
+          bannerEnabled: item.bannerEnabled || false,
+          bannerMessage: item.bannerMessage || null,
+          festivalDate: item.festivalDate || null,
+          preOrderDays: item.preOrderDays || 7,
         };
       });
       setOccasionsList(mapped);
     });
     return () => unsub();
   }, []);
+
+  // Compute upcoming festivals list on the client side
+  useEffect(() => {
+    if (occasionsList.length === 0) return;
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Filter active manual festivals from real-time occasionsList
+    const manualFestList = occasionsList
+      .filter((occ: any) => occ.bannerEnabled && occ.festivalDate)
+      .map((occ: any) => {
+        const festDate = new Date(occ.festivalDate);
+        return {
+          id: occ.id,
+          name: occ.label,
+          date: occ.festivalDate,
+          bannerImg: occ.bannerImg || null,
+          bannerMessage: occ.bannerMessage || null,
+          category: occ.category,
+          source: "manual",
+          sortDate: festDate,
+        };
+      })
+      .filter((occ: any) => {
+        const festDate = occ.sortDate;
+        return festDate >= today;
+      });
+
+    // Generate defaults
+    const defaultFestList = [
+      { name: "New Year's Day", month: 0, day: 1 },
+      { name: "Republic Day", month: 0, day: 26 },
+      { name: "Holi", month: 2, day: 14 },
+      { name: "Eid al-Fitr", month: 2, day: 31 },
+      { name: "Independence Day", month: 7, day: 15 },
+      { name: "Gandhi Jayanti", month: 9, day: 2 },
+      { name: "Diwali", month: 10, day: 4 },
+      { name: "Christmas", month: 11, day: 25 },
+    ];
+
+    const projectedDefaults = defaultFestList
+      .map((fest) => {
+        const year = today.getFullYear();
+        let occurrence = new Date(year, fest.month, fest.day);
+        if (occurrence < today) {
+          occurrence = new Date(year + 1, fest.month, fest.day);
+        }
+        return {
+          id: `default-${fest.name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+          name: fest.name,
+          date: occurrence.toISOString().split("T")[0],
+          bannerImg: null,
+          source: "default",
+          sortDate: occurrence,
+        };
+      })
+      .filter((fest) => fest.sortDate >= today);
+
+    // Merge: manual overrides default if names match
+    const combined: any[] = [...manualFestList];
+    projectedDefaults.forEach((def) => {
+      const exists = manualFestList.some(
+        (m) => m.name.toLowerCase() === def.name.toLowerCase()
+      );
+      if (!exists) {
+        combined.push(def);
+      }
+    });
+
+    // Sort by date ascending
+    combined.sort((a, b) => a.sortDate.getTime() - b.sortDate.getTime());
+
+    const topThree = combined.slice(0, 3);
+
+    if (topThree.length > 0) {
+      setUpcomingFestivals(topThree);
+      setShowFestivalPopup(true);
+    } else {
+      setShowFestivalPopup(false);
+    }
+  }, [occasionsList]);
+
 
   // Pre-fill custom occasion text if loaded from context
   useEffect(() => {
@@ -267,7 +397,74 @@ export default function OnboardingStep2() {
             </Link>
           </div>
         </div>
-      </div>
+      </div>      {/* Festival Reminder Popup */}
+      {showFestivalPopup && upcomingFestivals[activeFestivalIndex] && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-scale-up">
+            {/* Header with gradient and progress indicator */}
+            <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-6 text-white shrink-0 relative">
+              <button 
+                onClick={handleNextFestival}
+                className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors"
+                title="Skip to next festival"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+              </button>
+              <div className="flex items-center gap-2 mb-2">
+                <Calendar size={24} className="text-white" />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-amber-50">Upcoming Festival Alert</span>
+              </div>
+              <h2 className="text-2xl font-black tracking-wide leading-tight">
+                {upcomingFestivals[activeFestivalIndex].name}
+              </h2>
+            </div>
+            
+            {/* Content area */}
+            <div className="p-6 bg-gray-50/50 flex-1 flex flex-col items-center text-center">
+              <div className="bg-amber-50 border border-amber-100 rounded-2xl px-4 py-2 mb-4">
+                <span className="text-xs font-bold text-amber-700">
+                  {new Date(upcomingFestivals[activeFestivalIndex].date).toLocaleDateString('en-IN', { 
+                    weekday: 'long', 
+                    month: 'long', 
+                    day: 'numeric', 
+                    year: 'numeric' 
+                  })}
+                </span>
+              </div>
+              
+              {upcomingFestivals[activeFestivalIndex].bannerImg && (
+                <div className="w-full max-h-[140px] overflow-hidden rounded-xl border border-gray-200 bg-white p-1 mb-4 flex items-center justify-center shadow-inner">
+                  <img 
+                    src={upcomingFestivals[activeFestivalIndex].bannerImg} 
+                    alt={`${upcomingFestivals[activeFestivalIndex].name} Banner`} 
+                    className="max-h-[130px] w-auto object-contain rounded-lg"
+                  />
+                </div>
+              )}
+              
+              <p className="text-sm text-gray-600 leading-relaxed max-w-sm mb-2">
+                {upcomingFestivals[activeFestivalIndex].bannerMessage || (
+                  <>
+                    Would you like to enable a reminder banner on your storefront for <strong>{upcomingFestivals[activeFestivalIndex].name}</strong> so customers can customize and place orders in time?
+                  </>
+                )}
+              </p>
+            </div>
+            
+            {/* Footer buttons */}
+            <div className="p-4 border-t border-gray-150 bg-white shrink-0">
+              <button
+                onClick={() => handleOrderNow(upcomingFestivals[activeFestivalIndex])}
+                disabled={isAdding[upcomingFestivals[activeFestivalIndex].id]}
+                className="w-full py-3 px-4 rounded-xl font-bold text-xs uppercase tracking-wide text-white hover:opacity-90 transition-all text-center cursor-pointer shadow-sm"
+                style={{ backgroundColor: state.primaryColor || "#ec2626" }}
+              >
+                {isAdding[upcomingFestivals[activeFestivalIndex].id] ? "Processing..." : "Order Now"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -762,7 +762,7 @@ function saveLocalOccasions(occasions: any[]) {
   } catch {}
 }
 
-export async function createOccasion(data: { label: string; category: string; color: string; icon: string; img?: string }) {
+export async function createOccasion(data: { label: string; category: string; color: string; icon: string; img?: string; festivalDate?: string; bannerEnabled?: boolean; bannerMessage?: string; preOrderDays?: number; bannerImg?: string }) {
   const docId = data.label.toLowerCase().replace(/[^a-z0-9]+/g, "-");
   const record = {
     id: docId,
@@ -771,6 +771,11 @@ export async function createOccasion(data: { label: string; category: string; co
     color: data.color,
     icon: data.icon,
     img: data.img || null,
+    festivalDate: data.festivalDate || null,
+    bannerEnabled: data.bannerEnabled || false,
+    bannerMessage: data.bannerMessage || null,
+    preOrderDays: data.preOrderDays || 7,
+    bannerImg: data.bannerImg || null,
     createdAt: new Date().toISOString(),
   };
 
@@ -791,7 +796,7 @@ export async function createOccasion(data: { label: string; category: string; co
   }
 }
 
-export async function updateOccasion(id: string, data: { label: string; category: string; color: string; icon: string; img?: string }) {
+export async function updateOccasion(id: string, data: { label: string; category: string; color: string; icon: string; img?: string; festivalDate?: string; bannerEnabled?: boolean; bannerMessage?: string; preOrderDays?: number; bannerImg?: string }) {
   // 1. Update in Firestore if available
   try {
     const firestore = requireDb();
@@ -803,6 +808,11 @@ export async function updateOccasion(id: string, data: { label: string; category
         color: data.color,
         icon: data.icon,
         img: data.img || null,
+        ...(data.festivalDate !== undefined && { festivalDate: data.festivalDate }),
+        ...(data.bannerEnabled !== undefined && { bannerEnabled: data.bannerEnabled }),
+        ...(data.bannerMessage !== undefined && { bannerMessage: data.bannerMessage }),
+        ...(data.preOrderDays !== undefined && { preOrderDays: data.preOrderDays }),
+        ...(data.bannerImg !== undefined && { bannerImg: data.bannerImg }),
       },
       { merge: true }
     );
@@ -814,7 +824,12 @@ export async function updateOccasion(id: string, data: { label: string; category
   const local = getLocalOccasions();
   const idx = local.findIndex(o => o.id === id);
   if (idx !== -1) {
-    local[idx] = { ...local[idx], ...data, img: data.img || local[idx].img || null };
+    local[idx] = { 
+      ...local[idx], 
+      ...data, 
+      img: data.img !== undefined ? data.img : local[idx].img,
+      bannerImg: data.bannerImg !== undefined ? data.bannerImg : local[idx].bannerImg 
+    };
   } else {
     // If it's a seed preset being customized/updated locally
     const preset = SEED_OCCASIONS.find(o => o.id === id);
@@ -825,6 +840,11 @@ export async function updateOccasion(id: string, data: { label: string; category
       color: data.color,
       icon: data.icon,
       img: data.img || null,
+      festivalDate: data.festivalDate || null,
+      bannerEnabled: data.bannerEnabled || false,
+      bannerMessage: data.bannerMessage || null,
+      preOrderDays: data.preOrderDays || 7,
+      bannerImg: data.bannerImg || null,
       createdAt: preset ? new Date().toISOString() : new Date().toISOString(),
     });
   }
